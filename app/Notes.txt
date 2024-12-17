@@ -1,0 +1,2 @@
+Permision for notifications and general alarm usage should be integrated on first start of the app, doesnt ask at all for now
+Include it when using the camera for barcode scanner since permission will be needed there as well
