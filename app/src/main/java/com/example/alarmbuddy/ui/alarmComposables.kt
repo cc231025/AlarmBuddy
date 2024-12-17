@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.alarmbuddy.AlarmReceiver
@@ -130,6 +131,17 @@ fun checkAndRequestExactAlarmPermission(context: Context) {
 }
 
 
+val alarmSounds = mapOf(
+    "Classic Alarm" to R.raw.classic_alarm,
+    "Pain Alarm" to R.raw.pain_alarm,
+    "Granular Alarm" to R.raw.granular_alarm
+)
+
+fun getAudioResource(audioFileName: String): Int? {
+    return alarmSounds[audioFileName] // Returns null if not found
+}
+
+
 @Composable
 fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
 
@@ -137,25 +149,40 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
 
     val alarm: Alarm? = state.find { it.id == alarmId }
 
-    val mediaPlayer = remember { MediaPlayer.create(context, R.raw.audio) }
 
-    // Ensure MediaPlayer is set to loop and start it
-    LaunchedEffect(mediaPlayer) {
-        mediaPlayer.apply {
-            isLooping = true
-            start()
+//    Handle nullpointers here if alarm is 0 - maybe navigate back to home or another error message would be good
+    if (alarm == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No alarm found for ID: $alarmId", fontSize = 18.sp, color = Color.Gray)
         }
+        return
     }
 
+        val audioFileId = getAudioResource(alarm.audioFile)
 
 
-    if (alarm != null) {
+        val mediaPlayer =
+            remember { MediaPlayer.create(context, audioFileId ?: R.raw.classic_alarm) }
+
+
+        // Ensure MediaPlayer is set to loop and start it
+        LaunchedEffect(mediaPlayer) {
+            mediaPlayer.apply {
+                isLooping = true
+                start()
+                setVolume(alarm.volume, alarm.volume)
+            }
+        }
+
+
+
 
         viewModel.updateAlarm(alarm.copy(activated = false))
 
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
 
             Button(
+//                Note create some stopchecks here - since we cant stop the instance twice - might crash the app
                 onClick = {
                     mediaPlayer.apply {
                         stop()
@@ -175,6 +202,5 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
             }
         }
 
-    }
-
 }
+

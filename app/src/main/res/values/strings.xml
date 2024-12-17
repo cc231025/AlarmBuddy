@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">AlarmBuddy</string>
+    <string name="granular_alarm">Granular Alarm</string>
+    <string name="pain_alarm">Pain Alarm</string>
+    <string name="classic_alarm">Classic Alarm</string>
 </resources>

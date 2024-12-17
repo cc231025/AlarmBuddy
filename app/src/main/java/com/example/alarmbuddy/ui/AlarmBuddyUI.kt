@@ -1,14 +1,10 @@
 package com.example.alarmbuddy.ui
 
 import android.app.AlarmManager
-import android.app.Application
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.LinearEasing
@@ -16,7 +12,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +22,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -35,16 +29,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.materialIcon
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -60,17 +49,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -78,28 +59,23 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.alarmbuddy.AlarmApplication
+import com.example.alarmbuddy.R
 import com.example.alarmbuddy.data.Alarm
-import com.example.alarmbuddy.ui.theme.PurpleGrey40
 import com.example.alarmbuddy.ui.theme.Typography
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 
 enum class Screens {
     Home, Add, Edit, Ringing, BarcodeTask, ShakeTask,
 }
 
+
 @Composable
 fun AlarmBuddyApp(
     modifier: Modifier = Modifier,
     navigateTo: String,
-    alarmId : Int
+    alarmId: Int
 ) {
 
     //    Get Application context
@@ -174,11 +150,29 @@ fun AlarmBuddyApp(
                         modifier,
 //                    AlarmViewModel,
                         navController,
-                        viewModel
+                        viewModel,
+                        context
                     )
 
                 }
             }
+
+            composable("Edit/{id}") { navBackStackEntry ->
+
+                val id = navBackStackEntry.arguments?.getString("id")?.toInt() ?: -1
+                Box(modifier = Modifier.padding(innerPadding)) {
+                    Edit(
+                        id,
+                        modifier,
+//                    AlarmViewModel,
+                        navController,
+                        viewModel,
+                        context
+                    )
+
+                }
+            }
+
 
             composable(Screens.Ringing.name) {
                 Box(modifier = Modifier.padding(innerPadding)) {
@@ -221,7 +215,7 @@ fun Home(
         LazyColumn {
 
             itemsIndexed(state) { _, alarm ->
-                AlarmItem(alarm, viewModel, context)
+                AlarmItem(alarm, viewModel, context, navController)
             }
         }
 
@@ -236,10 +230,10 @@ fun Home(
 fun AlarmItem(
     alarm: Alarm,
     viewModel: AlarmViewModel,
-    context:Context
+    context: Context,
+    navController: NavController
 
 ) {
-
 
 
     OutlinedCard(
@@ -247,7 +241,10 @@ fun AlarmItem(
             .fillMaxWidth()
             .padding(8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
 
             Column(Modifier.padding(16.dp)) {
 
@@ -267,8 +264,9 @@ fun AlarmItem(
                         modifier = Modifier.defaultMinSize(minWidth = 6.dp, minHeight = 6.dp),
 
                         onClick = {
-                            if(alarm.activated){
-                            cancelAlarm(context, alarm)}
+                            if (alarm.activated) {
+                                cancelAlarm(context, alarm)
+                            }
 
                             viewModel.deleteAlarm(alarm)
                         }) {
@@ -278,6 +276,8 @@ fun AlarmItem(
                         contentPadding = PaddingValues(4.dp),
                         modifier = Modifier.defaultMinSize(minWidth = 6.dp, minHeight = 6.dp),
                         onClick = {
+                            navController.navigate("Edit/${alarm.id}")
+
                         }) {
                         Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit")
                     }
@@ -288,35 +288,47 @@ fun AlarmItem(
 
             }
 
+            Column(Modifier.padding(16.dp)) {
 
-            Switch(
-                checked = alarm.activated,
-                onCheckedChange = {
-                    viewModel.updateAlarm(alarm.copy(activated = !alarm.activated))
-                    if(alarm.activated) {
+
+                Switch(
+                    checked = alarm.activated,
+                    onCheckedChange = {
+//                    Some logic fuckery here, the alarmstate is changed before it reaches here even
+//                    So since its allready changed we have to use !alarm - dirty work around but it works after all
+                        if (!alarm.activated) {
 //                        Nolt sure if needed
-                        checkAndRequestExactAlarmPermission(context)
+                            checkAndRequestExactAlarmPermission(context)
 
-                        scheduleExactAlarm(context, alarm)
-                        Toast.makeText(context, "Alarm with id: ${alarm.id} Set", Toast.LENGTH_SHORT).show()
+                            scheduleExactAlarm(context, alarm)
+                            Toast.makeText(
+                                context,
+                                "Alarm with id: ${alarm.id} Set",
+                                Toast.LENGTH_SHORT
+                            ).show()
 
-//                        viewModel.updateAlarm(alarm.copy(activated = true))
-
-
-                    }else {
-                        cancelAlarm(context, alarm)
-                        Toast.makeText(context, "Alarm with id: ${alarm.id} Canceled", Toast.LENGTH_SHORT).show()
-//                        viewModel.updateAlarm(alarm.copy(activated = false))
+                            viewModel.updateAlarm(alarm.copy(activated = true))
 
 
+                        } else {
+                            cancelAlarm(context, alarm)
+                            Toast.makeText(
+                                context,
+                                "Alarm with id: ${alarm.id} Canceled",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.updateAlarm(alarm.copy(activated = false))
+
+
+                        }
                     }
-                }
-            )
+                )
+
+                Text(text=alarm.audioFile)
+            }
         }
     }
 }
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -324,7 +336,8 @@ fun AlarmItem(
 fun Add(
     modifier: Modifier = Modifier,
     navController: NavController,
-    viewModel: AlarmViewModel
+    viewModel: AlarmViewModel,
+    context: Context
 ) {
 
 //    val date = Date() // Current date and time
@@ -355,11 +368,11 @@ fun Add(
         Row(horizontalArrangement = Arrangement.SpaceBetween) {
             Button(onClick = {
                 navController.navigate(Screens.Home.name)
-            }) { Text(text = "Save") }
+            }) { Text(text = "Cancel") }
             Button(onClick = {
                 viewModel.addAlarm(
                     Alarm(
-                        audioFile = "audio",
+                        audioFile = context.getString(R.string.classic_alarm),
                         barcode = "12345",
                         time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0)
                     )
@@ -398,6 +411,136 @@ fun Add(
             value = volume,
             onValueChange = { volume = it }
         )
+
+
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun Edit(
+    id: Int,
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    viewModel: AlarmViewModel,
+    context: Context
+) {
+
+//    On edit old alarm has to be unset if it was activated before
+
+    val state by viewModel.alarmUIState.collectAsStateWithLifecycle()
+
+    val alarmState: Alarm? = state.find { it.id == id }
+
+    if (alarmState == null) {
+        Toast.makeText(context, "Cant get alarm with this id Error!", Toast.LENGTH_SHORT).show()
+        navController.navigate(Screens.Home.name)
+        return
+    }
+
+    var alarm by remember {mutableStateOf(alarmState.copy())}
+
+
+    var dropDownExpanded by remember { mutableStateOf(false) }
+
+    val timePickerState = rememberTimePickerState(
+        initialHour = alarm.time.hour,
+        initialMinute = alarm.time.minute,
+        is24Hour = true,
+    )
+
+
+    Column(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp, vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween) {
+            Button(onClick = {
+                navController.navigate(Screens.Home.name)
+            }) { Text(text = "Cancel") }
+            Button(onClick = {
+                alarm.time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0)
+
+                viewModel.updateAlarm(
+                    alarm
+
+                )
+                navController.navigate(Screens.Home.name)
+            }) { Text(text = "Save") }
+        }
+        TimePicker(
+            state = timePickerState,
+        )
+        Text(text = "Wake-Up Sound")
+        Box(
+            modifier
+                .border(border = BorderStroke(2.dp, Color.Magenta))
+                .padding(4.dp)
+                .fillMaxWidth()
+                .clickable { dropDownExpanded = !dropDownExpanded }) {
+            Text(text = alarm.audioFile)
+
+            DropdownMenu(
+                expanded = dropDownExpanded,
+                onDismissRequest = { dropDownExpanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Classic Alarm") },
+                    onClick = {
+                        alarm.audioFile = context.getString(R.string.classic_alarm)
+                        dropDownExpanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Granular Alarm") },
+                    onClick = { alarm.audioFile = context.getString(R.string.granular_alarm)
+                        dropDownExpanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Pain Alarm") },
+                    onClick = { alarm.audioFile = context.getString(R.string.pain_alarm)
+                        dropDownExpanded = false
+                    }
+                )
+            }
+        }
+
+        Slider(
+            value = alarm.volume,
+            onValueChange = { volume ->
+                alarm = alarm.copy(volume = volume)
+            }
+        )
+
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+
+            OutlinedCard(Modifier.fillMaxWidth()) {
+
+                Text(text = "BarcodeTask")
+                Switch(
+                    checked = alarm.barcodeTask,
+                    onCheckedChange = {
+                        alarm.barcodeTask = !alarm.barcodeTask
+                    }
+                )
+            }
+
+            OutlinedCard(Modifier.fillMaxWidth()) {
+
+                Text(text = "Shake Task")
+                Switch(
+                    checked = alarm.shakeTask,
+                    onCheckedChange = {
+                        alarm.shakeTask = !alarm.shakeTask
+                    }
+                )
+            }
+
+        }
 
 
     }

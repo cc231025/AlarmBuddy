@@ -2,21 +2,19 @@ package com.example.alarmbuddy.data
 
 import androidx.room.TypeConverter
 import com.example.alarmbuddy.data.db.AlarmEntity
-import java.sql.Date
-import java.sql.Timestamp
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 data class Alarm (
     val id: Int = 0,
-    val name: String = "myAlarm",
-    val time: LocalTime,
+    val name: String = "Classic_Alarm",
+    var time: LocalTime,
     val activated: Boolean = false,
     val barcode: String,
-    val barcodeTask: Boolean = false,
-    val shakeTask: Boolean = false,
-    val audioFile: String,
-    val volume: Int = 50,
+    var barcodeTask: Boolean = false,
+    var shakeTask: Boolean = false,
+    var audioFile: String,
+    var volume: Float = 0.5f,
     val snoozes: Int = 3,
     val snoozeTime: Int = 300
 
