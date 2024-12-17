@@ -15,16 +15,29 @@ import androidx.core.app.NotificationCompat
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == "com.example.ALARM_ACTION") {
-            // Start a foreground service
-            val serviceIntent = Intent(context, AlarmService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
+//            // Start a foreground service
+//            val serviceIntent = Intent(context, AlarmService::class.java)
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                context.startForegroundService(serviceIntent)
+//            } else {
+//                context.startService(serviceIntent)
+//            }
+
+            val alarmId = intent.getIntExtra("id", -1)  // -1 is the default value if "id" is not found
+
+
+            val launchIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("navigateTo", "Ringing")
+                putExtra("id", alarmId)
             }
+
+
 
             // Optionally, show a notification
             showNotification(context)
+
+            context.startActivity(launchIntent)
         }
     }
 

@@ -1,7 +1,10 @@
 package com.example.alarmbuddy.ui
 
+import android.app.AlarmManager
 import android.app.Application
 import android.content.Context
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.EnterTransition
@@ -50,6 +53,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,22 +92,39 @@ import java.util.Locale
 
 
 enum class Screens {
-    Home, Add, Edit, Ringing, BarcodeTask, ShakeTask
+    Home, Add, Edit, Ringing, BarcodeTask, ShakeTask,
 }
 
 @Composable
 fun AlarmBuddyApp(
     modifier: Modifier = Modifier,
+    navigateTo: String,
+    alarmId : Int
 ) {
 
     //    Get Application context
     val context = LocalContext.current.applicationContext as AlarmApplication
+
+
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    val nextAlarm = alarmManager.nextAlarmClock
+    Log.d("AlarmManager", "Next alarm time: ${nextAlarm?.triggerTime}")
+
+
 //  Get viewModel and Factory stuff - with this we dont need a extra file I think ...
     val viewModel: AlarmViewModel = viewModel(
         factory = context.alarmViewModelFactory
     )
 
     val navController = rememberNavController()
+
+
+    LaunchedEffect(navigateTo) {
+        if (navigateTo == "Ringing") {
+            navController.navigate("Ringing")
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -158,6 +179,20 @@ fun AlarmBuddyApp(
 
                 }
             }
+
+            composable(Screens.Ringing.name) {
+                Box(modifier = Modifier.padding(innerPadding)) {
+                    Ringing(
+                        alarmId,
+//                        modifier,
+////                    AlarmViewModel,
+//                        navController,
+                        viewModel,
+                        context
+                    )
+
+                }
+            }
         }
     }
 }
@@ -205,7 +240,6 @@ fun AlarmItem(
 
 ) {
 
-    var checked by remember { mutableStateOf(alarm.activated) }
 
 
     OutlinedCard(
@@ -213,7 +247,7 @@ fun AlarmItem(
             .fillMaxWidth()
             .padding(8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
 
             Column(Modifier.padding(16.dp)) {
 
@@ -233,6 +267,9 @@ fun AlarmItem(
                         modifier = Modifier.defaultMinSize(minWidth = 6.dp, minHeight = 6.dp),
 
                         onClick = {
+                            if(alarm.activated){
+                            cancelAlarm(context, alarm)}
+
                             viewModel.deleteAlarm(alarm)
                         }) {
                         Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete")
@@ -253,12 +290,24 @@ fun AlarmItem(
 
 
             Switch(
-                checked = checked,
+                checked = alarm.activated,
                 onCheckedChange = {
-                    checked = it
-                    if(checked) {
+                    viewModel.updateAlarm(alarm.copy(activated = !alarm.activated))
+                    if(alarm.activated) {
+//                        Nolt sure if needed
                         checkAndRequestExactAlarmPermission(context)
+
                         scheduleExactAlarm(context, alarm)
+                        Toast.makeText(context, "Alarm with id: ${alarm.id} Set", Toast.LENGTH_SHORT).show()
+
+//                        viewModel.updateAlarm(alarm.copy(activated = true))
+
+
+                    }else {
+                        cancelAlarm(context, alarm)
+                        Toast.makeText(context, "Alarm with id: ${alarm.id} Canceled", Toast.LENGTH_SHORT).show()
+//                        viewModel.updateAlarm(alarm.copy(activated = false))
+
 
                     }
                 }
