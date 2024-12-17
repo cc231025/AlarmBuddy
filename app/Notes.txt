@@ -32,3 +32,7 @@ fun requestBatteryOptimizationExclusion(context: Context) {
 
 
 Ok when alarm was triggered go in the db and change activated to false,
+
+
+Change: Alarm time if under 10 it will show like 15:1
+Also Order the Alarms by time

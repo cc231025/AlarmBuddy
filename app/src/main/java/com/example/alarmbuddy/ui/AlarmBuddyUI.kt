@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -241,7 +243,7 @@ fun AlarmItem(
             .fillMaxWidth()
             .padding(8.dp),
     ) {
-        Row(
+        Row( Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -288,7 +290,7 @@ fun AlarmItem(
 
             }
 
-            Column(Modifier.padding(16.dp)) {
+            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.End) {
 
 
                 Switch(
@@ -349,6 +351,9 @@ fun Add(
 
     var volume by remember { mutableStateOf(0.5f) }
 
+    var audiofile by remember { mutableStateOf(context.getString(R.string.classic_alarm)) }
+
+
 
     val currentTime = Calendar.getInstance()
 
@@ -372,9 +377,11 @@ fun Add(
             Button(onClick = {
                 viewModel.addAlarm(
                     Alarm(
-                        audioFile = context.getString(R.string.classic_alarm),
+                        audioFile = audiofile,
                         barcode = "12345",
-                        time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0)
+                        time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0),
+                        volume = volume,
+
                     )
                 )
                 navController.navigate(Screens.Home.name)
@@ -383,26 +390,61 @@ fun Add(
         TimePicker(
             state = timePickerState,
         )
-        Text(text = "Wake-Up Sound")
+//        Box(
+//            modifier
+//                .border(border = BorderStroke(2.dp, Color.Magenta))
+//                .padding(4.dp)
+//                .fillMaxWidth()
+//                .clickable { dropDownExpanded = !dropDownExpanded }) {
+//            Text(text = "Audio")
+//
+//            DropdownMenu(
+//                expanded = dropDownExpanded,
+//                onDismissRequest = { dropDownExpanded = false }
+//            ) {
+//                DropdownMenuItem(
+//                    text = { Text("Option 1") },
+//                    onClick = { /* Do something... */ }
+//                )
+//                DropdownMenuItem(
+//                    text = { Text("Option 2") },
+//                    onClick = { /* Do something... */ }
+//                )
+//            }
+//        }
+
         Box(
             modifier
                 .border(border = BorderStroke(2.dp, Color.Magenta))
                 .padding(4.dp)
                 .fillMaxWidth()
                 .clickable { dropDownExpanded = !dropDownExpanded }) {
-            Text(text = "Audio")
+            Text(text = audiofile)
 
             DropdownMenu(
                 expanded = dropDownExpanded,
                 onDismissRequest = { dropDownExpanded = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("Option 1") },
-                    onClick = { /* Do something... */ }
+                    text = { Text("Classic Alarm") },
+                    onClick = {
+                        audiofile = context.getString(R.string.classic_alarm)
+                        dropDownExpanded = false
+                    }
                 )
                 DropdownMenuItem(
-                    text = { Text("Option 2") },
-                    onClick = { /* Do something... */ }
+                    text = { Text("Granular Alarm") },
+                    onClick = {
+                        audiofile = context.getString(R.string.granular_alarm)
+                        dropDownExpanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Pain Alarm") },
+                    onClick = {
+                        audiofile = context.getString(R.string.pain_alarm)
+                        dropDownExpanded = false
+                    }
                 )
             }
         }
@@ -411,8 +453,6 @@ fun Add(
             value = volume,
             onValueChange = { volume = it }
         )
-
-
     }
 }
 
@@ -474,7 +514,6 @@ fun Edit(
         TimePicker(
             state = timePickerState,
         )
-        Text(text = "Wake-Up Sound")
         Box(
             modifier
                 .border(border = BorderStroke(2.dp, Color.Magenta))
@@ -516,29 +555,59 @@ fun Edit(
             }
         )
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row() {
 
-            OutlinedCard(Modifier.fillMaxWidth()) {
+            OutlinedCard(Modifier.weight(1f).padding(8.dp)) {
 
                 Text(text = "BarcodeTask")
                 Switch(
                     checked = alarm.barcodeTask,
                     onCheckedChange = {
-                        alarm.barcodeTask = !alarm.barcodeTask
+                        alarm = alarm.copy(barcodeTask = !alarm.barcodeTask)
                     }
                 )
             }
+            Spacer(Modifier.weight(0.1f))
 
-            OutlinedCard(Modifier.fillMaxWidth()) {
+            OutlinedCard(Modifier.weight(1f).padding(8.dp)) {
 
                 Text(text = "Shake Task")
                 Switch(
                     checked = alarm.shakeTask,
                     onCheckedChange = {
-                        alarm.shakeTask = !alarm.shakeTask
+                        alarm = alarm.copy(shakeTask = !alarm.shakeTask)
                     }
                 )
             }
+        }
+
+        Row(Modifier.fillMaxWidth()) {
+
+            OutlinedCard(Modifier.weight(1f).padding(8.dp) // Padding outside the card
+            ) {
+
+                Text(text = "Math Task")
+                Switch(
+                    checked = alarm.mathTask,
+                    onCheckedChange = {
+                        alarm = alarm.copy(mathTask = !alarm.mathTask)
+                    }
+                )
+            }
+
+            Spacer(Modifier.weight(0.1f))
+
+            OutlinedCard(Modifier.weight(1f).padding(8.dp)) {
+
+                Text(text = "Memory Task")
+                Switch(
+                    checked = alarm.memoryTask,
+                    onCheckedChange = {
+                        alarm = alarm.copy(memoryTask = !alarm.memoryTask)
+                    }
+                )
+            }
+
 
         }
 

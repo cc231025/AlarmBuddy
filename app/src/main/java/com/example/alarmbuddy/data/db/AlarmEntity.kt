@@ -19,6 +19,8 @@ data class AlarmEntity(
     var barcodeTask: Boolean = false,
     @ColumnInfo("shakeTask")
     var shakeTask: Boolean = false,
+    var mathTask: Boolean = false,
+    var memoryTask: Boolean = false,
     var audioFile: String,
     var volume: Float = 0.5f,
     val snoozes: Int = 3,
@@ -36,6 +38,8 @@ fun AlarmEntity.toAlarm(): Alarm {
         barcode = this.barcode,
         barcodeTask = this.barcodeTask,
         shakeTask = this.shakeTask,
+        mathTask = this.mathTask,
+        memoryTask = this.memoryTask,
         audioFile = this.audioFile,
         volume = this.volume,
         snoozes = this.snoozes,
