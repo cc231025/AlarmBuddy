@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -61,6 +60,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.alarmbuddy.AlarmApplication
+import com.example.alarmbuddy.MainActivity
 import com.example.alarmbuddy.R
 import com.example.alarmbuddy.data.Alarm
 import com.example.alarmbuddy.ui.theme.Typography
@@ -69,7 +69,7 @@ import java.util.Calendar
 
 
 enum class Screens {
-    Home, Add, Edit, Ringing, BarcodeTask, ShakeTask,
+    Home, Add, Edit, Ringing, BarcodeTask, ShakeTask, Camera, CameraSetup
 }
 
 
@@ -189,6 +189,29 @@ fun AlarmBuddyApp(
 
                 }
             }
+
+//            composable(Screens.Camera.name) {
+//                Box(modifier = Modifier.padding(innerPadding)) {
+//                    Camera(
+//                    )
+//
+//                }
+//            }
+
+            composable(Screens.CameraSetup.name) {
+                CameraSetup(
+                    navController,
+                    context
+
+                )
+            }
+
+            composable(Screens.Camera.name) {
+                Camera(
+                    context
+
+                )
+            }
         }
     }
 }
@@ -213,6 +236,13 @@ fun Home(
             }) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Alarm")
         }
+
+        Button(
+            onClick = {
+                navController.navigate(Screens.Camera.name)
+            }) {
+Text(text="start camera"
+)        }
 
         LazyColumn {
 
