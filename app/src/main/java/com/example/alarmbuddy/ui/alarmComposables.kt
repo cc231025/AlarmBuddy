@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.alarmbuddy.AlarmReceiver
+import com.example.alarmbuddy.AlarmService
 import com.example.alarmbuddy.R
 import com.example.alarmbuddy.data.Alarm
 import java.util.Calendar
@@ -66,6 +67,8 @@ fun scheduleExactAlarm(context: Context, alarm: Alarm) {
     val intent = Intent(context, AlarmReceiver::class.java).apply {
         action = "com.example.ALARM_ACTION"
         putExtra("id", alarm.id)
+        putExtra("volume", alarm.volume)
+        putExtra("audioFile", alarm.audioFile)
     }
 
 //    intent.putExtra("alarm", alarm)
@@ -158,21 +161,21 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
         return
     }
 
-        val audioFileId = getAudioResource(alarm.audioFile)
-
-
-        val mediaPlayer =
-            remember { MediaPlayer.create(context, audioFileId ?: R.raw.classic_alarm) }
-
-
-        // Ensure MediaPlayer is set to loop and start it
-        LaunchedEffect(mediaPlayer) {
-            mediaPlayer.apply {
-                isLooping = true
-                start()
-                setVolume(alarm.volume, alarm.volume)
-            }
-        }
+//        val audioFileId = getAudioResource(alarm.audioFile)
+//
+//
+//        val mediaPlayer =
+//            remember { MediaPlayer.create(context, audioFileId ?: R.raw.classic_alarm) }
+//
+//
+//        // Ensure MediaPlayer is set to loop and start it
+//        LaunchedEffect(mediaPlayer) {
+//            mediaPlayer.apply {
+//                isLooping = true
+//                start()
+//                setVolume(alarm.volume, alarm.volume)
+//            }
+//        }
 
 
 
@@ -184,10 +187,11 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
             Button(
 //                Note create some stopchecks here - since we cant stop the instance twice - might crash the app
                 onClick = {
-                    mediaPlayer.apply {
-                        stop()
-                        release()
-                    }
+                    stopAlarmService(context)
+//                    mediaPlayer.apply {
+//                        stop()
+//                        release()
+//                    }
                 }) {
                 Icon(imageVector = Icons.Filled.Clear, contentDescription = "Stop Alarm")
             }
@@ -204,3 +208,10 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
 
 }
 
+
+fun stopAlarmService(context: Context) {
+    val stopIntent = Intent(context, AlarmService::class.java).apply {
+        action = "STOP_ALARM"
+    }
+    context.startService(stopIntent)
+}

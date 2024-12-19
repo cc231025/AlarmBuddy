@@ -1,133 +1,39 @@
 package com.example.alarmbuddy.ui
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
-import com.example.alarmbuddy.MainActivity
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-
-//@Composable
-//fun CameraPreview(
-//    modifier: Modifier,
-//    lifecycleOwner: LifecycleOwner,
-//    onPermissionsDenied: () -> Unit
-//) {
-//    // Safely cast LocalContext.current to AppCompatActivity
-//    val context = LocalContext.current as? AppCompatActivity
-//
-//    if (context == null) {
-//        Toast.makeText(LocalContext.current, "Context is not an AppCompatActivity", Toast.LENGTH_SHORT).show()
-//        return
-//    }
-//
-//    // Use remember to persist PreviewView
-//    val previewView = remember { PreviewView(context) }
-//
-//    // LaunchedEffect to handle permissions and camera setup
-//    LaunchedEffect(Unit) {
-//        val cameraManager = CameraManager(context, lifecycleOwner, previewView)
-//        cameraManager.requestPermissions { granted ->
-//            if (granted) {
-//                cameraManager.startCamera()
-//            } else {
-//                onPermissionsDenied()
-//            }
-//        }
-//    }
-//
-//    // Display the PreviewView using AndroidView
-//    AndroidView(
-//        factory = { previewView },
-//        modifier = modifier
-//    )
-//}
-
-//
-//@Composable
-//fun Camera(context: Context, activity: MainActivity) {
-//
-//
-//
-//    val cameraPermissionRequest =
-//        activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-//            if (isGranted) {
-//                Toast.makeText(context, "Camera permission Granted", Toast.LENGTH_SHORT).show()
-//
-//                // Implement camera related  code
-//            } else {
-//                Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
-//
-//                // Camera permission denied
-//            }
-//
-//        }
-//
-//
-//    when (PackageManager.PERMISSION_GRANTED) {
-//        ContextCompat.checkSelfPermission(
-//            context,
-//            Manifest.permission.CAMERA
-//        ) -> {
-//            Column {
-//                CameraPreview(
-////            modifier = Modifier.fillMaxSize(),
-////            lifecycleOwner = LocalLifecycleOwner.current,
-////            onPermissionsDenied = {
-////                Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
-////            }
-//                )
-//            }
-//        }
-//
-//        else -> {
-//            cameraPermissionRequest.launch(Manifest.permission.CAMERA)
-//        }
-//
-//
-//
-//    }
-//}
-
-
-
 
 
 @Composable

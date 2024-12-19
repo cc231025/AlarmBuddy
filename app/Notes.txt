@@ -31,8 +31,20 @@ fun requestBatteryOptimizationExclusion(context: Context) {
 }
 
 
+## On Edit check if the alarm is allready set - if it is we have to clear it and reset it to avoid conflicts
+
+
 Ok when alarm was triggered go in the db and change activated to false,
 
 
 Change: Alarm time if under 10 it will show like 15:1
 Also Order the Alarms by time
+
+
+Since we use Foreground now to initiate and stop the alarms - we can maybe notice if the app is closed while the task is still running - just set a new timer to fuckwith it
+
+
+
+Problem Now: Alarm works fine also ringing if closed and so on
+Problem Intent gets passed to mainactivity when opened over notification click, but only the first time when opened over launchintent or normal app opening
+Use SharedPreference  to pass this persistently how I want it maybe ...
