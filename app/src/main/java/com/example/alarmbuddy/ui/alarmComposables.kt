@@ -38,13 +38,6 @@ import java.util.Calendar
 
 fun scheduleExactAlarm(context: Context, alarm: Alarm) {
 
-//    if (!Settings.canDrawOverlays(context)) {
-//        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-//            data = Uri.parse("package:${context.packageName}")
-//        }
-////        context.startActivity(intent)
-//    }
-
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     Log.d("AlarmApp", "Alarm time: ${alarm.time.hour} : ${alarm.time.minute}")
@@ -161,24 +154,6 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
         return
     }
 
-//        val audioFileId = getAudioResource(alarm.audioFile)
-//
-//
-//        val mediaPlayer =
-//            remember { MediaPlayer.create(context, audioFileId ?: R.raw.classic_alarm) }
-//
-//
-//        // Ensure MediaPlayer is set to loop and start it
-//        LaunchedEffect(mediaPlayer) {
-//            mediaPlayer.apply {
-//                isLooping = true
-//                start()
-//                setVolume(alarm.volume, alarm.volume)
-//            }
-//        }
-
-
-
 
         viewModel.updateAlarm(alarm.copy(activated = false))
 
@@ -188,10 +163,7 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
 //                Note create some stopchecks here - since we cant stop the instance twice - might crash the app
                 onClick = {
                     stopAlarmService(context)
-//                    mediaPlayer.apply {
-//                        stop()
-//                        release()
-//                    }
+
                 }) {
                 Icon(imageVector = Icons.Filled.Clear, contentDescription = "Stop Alarm")
             }
@@ -210,8 +182,15 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
 
 
 fun stopAlarmService(context: Context) {
+
+
+    val sharedPref = context.getSharedPreferences("AlarmState", Context.MODE_PRIVATE)
+    sharedPref.edit().clear().apply()
+
+
     val stopIntent = Intent(context, AlarmService::class.java).apply {
         action = "STOP_ALARM"
     }
+
     context.startService(stopIntent)
 }

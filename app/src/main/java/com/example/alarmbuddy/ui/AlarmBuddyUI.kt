@@ -372,11 +372,6 @@ fun Add(
     context: Context
 ) {
 
-//    val date = Date() // Current date and time
-//    val timeFormater = SimpleDateFormat("HH:mm", Locale.getDefault())
-//    val currentTime = timeFormater.format(date) // Format date to extract time
-//
-//    var time by remember { mutableStateOf(currentTime) }
     var dropDownExpanded by remember { mutableStateOf(false) }
 
     var volume by remember { mutableStateOf(0.5f) }
@@ -420,28 +415,7 @@ fun Add(
         TimePicker(
             state = timePickerState,
         )
-//        Box(
-//            modifier
-//                .border(border = BorderStroke(2.dp, Color.Magenta))
-//                .padding(4.dp)
-//                .fillMaxWidth()
-//                .clickable { dropDownExpanded = !dropDownExpanded }) {
-//            Text(text = "Audio")
-//
-//            DropdownMenu(
-//                expanded = dropDownExpanded,
-//                onDismissRequest = { dropDownExpanded = false }
-//            ) {
-//                DropdownMenuItem(
-//                    text = { Text("Option 1") },
-//                    onClick = { /* Do something... */ }
-//                )
-//                DropdownMenuItem(
-//                    text = { Text("Option 2") },
-//                    onClick = { /* Do something... */ }
-//                )
-//            }
-//        }
+
 
         Box(
             modifier

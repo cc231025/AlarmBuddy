@@ -2,7 +2,10 @@ package com.example.alarmbuddy
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,19 +19,10 @@ import com.example.alarmbuddy.ui.theme.AlarmBuddyTheme
 
 class MainActivity : ComponentActivity() {
 
-//    private var notificationMediaPlayer: MediaPlayer? = null
-//
 
 
-//    private val cameraPermissionRequest =
-//        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-//            if (isGranted) {
-//                // Implement camera related  code
-//            } else {
-//                // Camera permission denied
-//            }
-//
-//        }
+
+
 
 
 
@@ -37,21 +31,29 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-//        notificationManager.cancelAll();
+//        Check write setting permission to override volume change
+        if (!Settings.System.canWrite(this)) {
+            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            this.startActivity(intent)
+        }
 
 
-//        when (PackageManager.PERMISSION_GRANTED) {
-//            ContextCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.CAMERA
-//            ) -> {
-//                // Camera permission already granted
-//                // Implement camera related code
+//        Get intent from AlarmReceiver when it restarts the activity on alarm activation
+        var navigateTo = intent?.getStringExtra("navigateTo") ?: ""
+        var alarmId =
+            intent.getIntExtra("id", -1)
 
+//       If the App is launched we observe the alarmstate via the sharedpreferences
+//        Since on launch multible launches and terminations of the the Intent is not reliable when opening the app normally
+//        Therefore sharedPreferences persist through this
+        if (navigateTo == ""){
+            val sharedPref = getSharedPreferences("AlarmState", Context.MODE_PRIVATE)
+            navigateTo = sharedPref.getString("navigateTo", "") ?: ""
+            alarmId = sharedPref.getInt("id", -1)
+        }
 
-        val navigateTo = intent?.getStringExtra("navigateTo") ?: ""
-        val alarmId =
-            intent.getIntExtra("id", -1)  // -1 is the default value if "id" is not found
 
         setContent {
             AlarmBuddyTheme {
@@ -59,17 +61,10 @@ class MainActivity : ComponentActivity() {
                     AlarmBuddyApp(
                         Modifier.padding(innerPadding),
                         navigateTo = navigateTo,
-                        alarmId = alarmId// Pass the navigation info to the app
+                        alarmId = alarmId
                     )
                 }
             }
         }
-//            }
-//
-//            else -> {
-//                cameraPermissionRequest.launch(Manifest.permission.CAMERA)
-//            }
-
-
     }
 }
