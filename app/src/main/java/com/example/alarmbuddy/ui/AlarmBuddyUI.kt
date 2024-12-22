@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,11 +22,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -50,9 +55,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -60,7 +70,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.alarmbuddy.AlarmApplication
-import com.example.alarmbuddy.MainActivity
 import com.example.alarmbuddy.R
 import com.example.alarmbuddy.data.Alarm
 import com.example.alarmbuddy.ui.theme.Typography
@@ -198,17 +207,23 @@ fun AlarmBuddyApp(
 //                }
 //            }
 
-            composable(Screens.CameraSetup.name) {
+            composable("CameraSetup/{Intent}") { navBackStackEntry ->
+                val Intent = navBackStackEntry.arguments?.getString("Intent") ?: "setBarcode"
+
                 CameraSetup(
                     navController,
-                    context
+                    context,
+                    Intent
 
                 )
             }
 
-            composable(Screens.Camera.name) {
+            composable("Camera/{Intent}") { navBackStackEntry ->
+                val Intent = navBackStackEntry.arguments?.getString("Intent") ?: "setBarcode"
+
                 Camera(
-                    context
+                    context,
+                    Intent
 
                 )
             }
@@ -236,13 +251,6 @@ fun Home(
             }) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Alarm")
         }
-
-        Button(
-            onClick = {
-                navController.navigate(Screens.Camera.name)
-            }) {
-Text(text="start camera"
-)        }
 
         LazyColumn {
 
@@ -273,7 +281,8 @@ fun AlarmItem(
             .fillMaxWidth()
             .padding(8.dp),
     ) {
-        Row( Modifier.fillMaxWidth(),
+        Row(
+            Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -356,7 +365,7 @@ fun AlarmItem(
                     }
                 )
 
-                Text(text=alarm.audioFile)
+                Text(text = alarm.audioFile)
             }
         }
     }
@@ -377,7 +386,6 @@ fun Add(
     var volume by remember { mutableStateOf(0.5f) }
 
     var audiofile by remember { mutableStateOf(context.getString(R.string.classic_alarm)) }
-
 
 
     val currentTime = Calendar.getInstance()
@@ -407,7 +415,7 @@ fun Add(
                         time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0),
                         volume = volume,
 
-                    )
+                        )
                 )
                 navController.navigate(Screens.Home.name)
             }) { Text(text = "Save") }
@@ -461,6 +469,75 @@ fun Add(
 }
 
 
+@Composable
+fun AddBarcode(showPopup: Boolean, onClickOutside: () -> Unit, viewModel: AlarmViewModel) {
+
+    val state by viewModel.barcodeUIState.collectAsStateWithLifecycle()
+
+
+    if (showPopup) {
+        // full screen background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.6f))
+                .zIndex(10F),
+
+            contentAlignment = Alignment.Center
+        ) {
+            // popup
+            Popup(
+                alignment = Alignment.Center,
+                properties = PopupProperties(
+                    excludeFromSystemGesture = true,
+                ),
+                // to dismiss on click outside
+                onDismissRequest = { onClickOutside() }
+            ) {
+                Column(
+                    Modifier
+                        .fillMaxWidth(0.9f)
+                        .fillMaxHeight(0.8f)
+                        .background(Color.Black)
+                        .clip(RoundedCornerShape(4.dp)),
+                ) {
+
+                    Row (horizontalArrangement = Arrangement.SpaceBetween) {
+                        Button( onClick = {}) { Text(text="Cancel") }
+                        Button( onClick = {}) { Text(text="Set new Barcode") }
+
+                    }
+
+                    Spacer(Modifier. height(20.dp))
+
+                    LazyColumn (Modifier
+                        .fillMaxHeight()){
+
+                        itemsIndexed(state) { _, barcode ->
+
+                            OutlinedCard(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(4.dp),
+
+                                ) {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(text = barcode.name, fontSize = 30.sp)
+                                }
+
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Edit(
@@ -475,6 +552,9 @@ fun Edit(
 
     val state by viewModel.alarmUIState.collectAsStateWithLifecycle()
 
+    var showPopup by remember { mutableStateOf(false) }
+
+
     val alarmState: Alarm? = state.find { it.id == id }
 
     if (alarmState == null) {
@@ -483,7 +563,7 @@ fun Edit(
         return
     }
 
-    var alarm by remember {mutableStateOf(alarmState.copy())}
+    var alarm by remember { mutableStateOf(alarmState.copy()) }
 
 
     var dropDownExpanded by remember { mutableStateOf(false) }
@@ -539,13 +619,15 @@ fun Edit(
                 )
                 DropdownMenuItem(
                     text = { Text("Granular Alarm") },
-                    onClick = { alarm.audioFile = context.getString(R.string.granular_alarm)
+                    onClick = {
+                        alarm.audioFile = context.getString(R.string.granular_alarm)
                         dropDownExpanded = false
                     }
                 )
                 DropdownMenuItem(
                     text = { Text("Pain Alarm") },
-                    onClick = { alarm.audioFile = context.getString(R.string.pain_alarm)
+                    onClick = {
+                        alarm.audioFile = context.getString(R.string.pain_alarm)
                         dropDownExpanded = false
                     }
                 )
@@ -561,19 +643,30 @@ fun Edit(
 
         Row() {
 
-            OutlinedCard(Modifier.weight(1f).padding(8.dp)) {
+            OutlinedCard(
+                Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
 
                 Text(text = "BarcodeTask")
                 Switch(
                     checked = alarm.barcodeTask,
                     onCheckedChange = {
-                        alarm = alarm.copy(barcodeTask = !alarm.barcodeTask)
+                        showPopup = true
+
+
+//                        alarm = alarm.copy(barcodeTask = !alarm.barcodeTask)
                     }
                 )
             }
             Spacer(Modifier.weight(0.1f))
 
-            OutlinedCard(Modifier.weight(1f).padding(8.dp)) {
+            OutlinedCard(
+                Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
 
                 Text(text = "Shake Task")
                 Switch(
@@ -587,7 +680,10 @@ fun Edit(
 
         Row(Modifier.fillMaxWidth()) {
 
-            OutlinedCard(Modifier.weight(1f).padding(8.dp) // Padding outside the card
+            OutlinedCard(
+                Modifier
+                    .weight(1f)
+                    .padding(8.dp) // Padding outside the card
             ) {
 
                 Text(text = "Math Task")
@@ -601,7 +697,11 @@ fun Edit(
 
             Spacer(Modifier.weight(0.1f))
 
-            OutlinedCard(Modifier.weight(1f).padding(8.dp)) {
+            OutlinedCard(
+                Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
 
                 Text(text = "Memory Task")
                 Switch(
@@ -617,4 +717,8 @@ fun Edit(
 
 
     }
+
+    AddBarcode(showPopup = showPopup, onClickOutside = { showPopup = false }, viewModel)
+
+
 }

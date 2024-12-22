@@ -226,6 +226,3 @@ class AlarmService : Service() {
         mediaPlayer = null
     }
 }
-
-
-

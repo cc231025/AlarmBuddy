@@ -37,7 +37,7 @@ import kotlin.coroutines.suspendCoroutine
 
 
 @Composable
-fun CameraSetup(navController: NavController, context: Context) {
+fun CameraSetup(navController: NavController, context: Context, Intent : String) {
 
     var showAlert by remember {mutableStateOf(false)}
 
@@ -48,7 +48,7 @@ fun CameraSetup(navController: NavController, context: Context) {
     ) { granted ->
         if (granted) {
             Toast.makeText(context, "Camera permission Granted", Toast.LENGTH_SHORT).show()
-            navController.navigate(Screens.Camera.name)
+            navController.navigate("Camera/setBarcode")
 
 //            Is granted start camera here aswell
         } else {
@@ -64,16 +64,13 @@ fun CameraSetup(navController: NavController, context: Context) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
 //            Is granted start trhe camera here
             Toast.makeText(context, "Camera permission Granted first", Toast.LENGTH_SHORT).show()
-            navController.navigate(Screens.Camera.name)
+            navController.navigate("Camera/setBarcode")
 
 
         } else {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
-
-
-
 
     if (showAlert){
         AlertDialog(
@@ -107,7 +104,9 @@ fun CameraSetup(navController: NavController, context: Context) {
 
 
 @Composable
-fun Camera(context: Context) {
+fun Camera(context: Context, Intent: String) {
+
+    Toast.makeText(context, Intent, Toast.LENGTH_SHORT).show()
 
 
     val lensFacing = CameraSelector.LENS_FACING_BACK
