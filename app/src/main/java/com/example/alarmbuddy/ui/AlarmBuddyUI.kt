@@ -194,10 +194,11 @@ fun AlarmBuddyApp(
                         alarmId,
 //                        modifier,
 ////                    AlarmViewModel,
-//                        navController,
                         viewModel,
-                        context
-                    )
+                        context,
+                        navController
+
+                        )
 
                 }
             }

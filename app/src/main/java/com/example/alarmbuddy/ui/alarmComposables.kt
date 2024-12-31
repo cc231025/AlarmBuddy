@@ -24,12 +24,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.alarmbuddy.AlarmReceiver
 import com.example.alarmbuddy.AlarmService
 import com.example.alarmbuddy.R
@@ -139,7 +144,12 @@ fun getAudioResource(audioFileName: String): Int? {
 
 
 @Composable
-fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
+fun Ringing(
+    alarmId: Int,
+    viewModel: AlarmViewModel,
+    context: Context,
+    navController: NavController
+) {
 
     val state by viewModel.alarmUIState.collectAsStateWithLifecycle()
 
@@ -155,29 +165,74 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
     }
 
 
-        viewModel.updateAlarm(alarm.copy(activated = false))
+    viewModel.updateAlarm(alarm.copy(activated = false))
+
+//    If barcodetask is true
+//    Start the camera with Intent checkbarcode or something
+//    pass the barcode to be checked and the barcodename to the camera to display the name as well
+//    If its the right barcode navigate back I guess and cancel the alarm
+//
+
+    var currentTask by remember { mutableIntStateOf(0) }
+
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+
+        when (currentTask){
+            0 -> {
+                if (alarm.barcodeTask) {
+                    Camera(
+                        context,
+                        "confirmBarcode",
+                        navController,
+                        viewModel,
+                        barcodeToConfirm = alarm.barcode,
+                        alarmIdToStop = alarm.id,
+                        barcodeConfirmed = {
+                            currentTask++
+                        })
 
 
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                }
+                else{currentTask ++}
 
-            Button(
-//                Note create some stopchecks here - since we cant stop the instance twice - might crash the app
-                onClick = {
-                    stopAlarmService(context)
-
-                }) {
-                Icon(imageVector = Icons.Filled.Clear, contentDescription = "Stop Alarm")
             }
-
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-//                Text("Alarm Triggered! Alarm Id is ${alarmId}", fontSize = 24.sp)
-                Text(
-                    "Alarm Triggered! Alarm Time is ${alarm.time.hour} : ${alarm.time.minute}",
-                    fontSize = 24.sp
-                )
-
-            }
+//            1 -> other tasks 1 by 1 and stuff
         }
+
+
+
+
+    }
+
+
+
+
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+
+        Button(
+//                Note create some stopchecks here - since we cant stop the instance twice - might crash the app
+            onClick = {
+                stopAlarmService(context)
+
+            }) {
+            Icon(imageVector = Icons.Filled.Clear, contentDescription = "Stop Alarm")
+        }
+
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+//                Text("Alarm Triggered! Alarm Id is ${alarmId}", fontSize = 24.sp)
+
+            Text(
+                "Scan the Barcode ${alarm.barcodeName} to stop the alarm",
+                fontSize = 24.sp
+            )
+            Text(
+                "Alarm Triggered! Get up!!!",
+                fontSize = 24.sp
+            )
+
+
+        }
+    }
 
 }
 

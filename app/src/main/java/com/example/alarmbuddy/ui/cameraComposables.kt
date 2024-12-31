@@ -204,13 +204,16 @@ fun Camera(
     context: Context,
     Intent: String,
     navController: NavController,
-    viewModel: AlarmViewModel
+    viewModel: AlarmViewModel,
+    barcodeToConfirm: String = "None",
+    alarmIdToStop: Int = -1,
+    barcodeConfirmed: () -> Unit = {},
+
 ) {
 
     var showPopup = remember { mutableStateOf(false) }
     var barcodeState = remember { mutableStateOf("0") }
 
-    Toast.makeText(context, Intent, Toast.LENGTH_SHORT).show()
 
     val lensFacing = CameraSelector.LENS_FACING_BACK
 
@@ -227,7 +230,7 @@ fun Camera(
     val imageAnalysis = ImageAnalysis.Builder().build()
     imageAnalysis.setAnalyzer(
         ContextCompat.getMainExecutor(context),
-        BarcodeAnalyzer(context, Intent, navController, viewModel, showPopup, barcodeState)
+        BarcodeAnalyzer(context, Intent, navController, viewModel, showPopup, barcodeState, barcodeToConfirm)
     )
 
 
@@ -239,6 +242,11 @@ fun Camera(
     }
     if (!showPopup.value) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+    }
+
+    if (Intent == "confirmBarcode" && barcodeState.value == barcodeToConfirm) {
+        Toast.makeText(context, "Confirmed the correct barcode", Toast.LENGTH_SHORT).show()
+
     }
 
     AddnewBarcode(
@@ -267,7 +275,8 @@ class BarcodeAnalyzer(
     private val navController: NavController,
     private val viewModel: AlarmViewModel,
     private var showPopup: MutableState<Boolean>,
-    private var barcodeState: MutableState<String>
+    private var barcodeState: MutableState<String>,
+    private var barcodeToConfirm: String
 ) : ImageAnalysis.Analyzer {
 
 
@@ -300,6 +309,8 @@ class BarcodeAnalyzer(
 
 
                         } else if (Intent == "confirmBarcode") {
+                            barcodeState.value = it
+
 
                         } else {
                             Toast.makeText(context, "Faulty Intent set", Toast.LENGTH_SHORT).show()
