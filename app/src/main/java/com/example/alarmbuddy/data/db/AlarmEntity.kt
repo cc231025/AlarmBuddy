@@ -12,7 +12,8 @@ data class AlarmEntity(
     val _id: Int = 0,
     val name: String = "Classic_Alarm",
     var time: LocalTime,
-    val barcode: String,
+    val barcode: String = "12345",
+    val barcodeName: String = "No Barcode Selected",
     @ColumnInfo("activated")
     val activated: Boolean = false,
     @ColumnInfo("barcodeTask")
@@ -36,6 +37,7 @@ fun AlarmEntity.toAlarm(): Alarm {
         time = this.time,
         activated = this.activated,
         barcode = this.barcode,
+        barcodeName = this.barcodeName,
         barcodeTask = this.barcodeTask,
         shakeTask = this.shakeTask,
         mathTask = this.mathTask,

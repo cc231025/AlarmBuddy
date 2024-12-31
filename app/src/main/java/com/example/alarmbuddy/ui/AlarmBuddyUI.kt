@@ -30,7 +30,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -49,6 +51,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -223,7 +226,9 @@ fun AlarmBuddyApp(
 
                 Camera(
                     context,
-                    Intent
+                    Intent,
+                    navController,
+                    viewModel
 
                 )
             }
@@ -470,7 +475,14 @@ fun Add(
 
 
 @Composable
-fun AddBarcode(showPopup: Boolean, onClickOutside: () -> Unit, viewModel: AlarmViewModel) {
+fun AddBarcode(
+    showPopup: Boolean,
+    onClickOutside: () -> Unit,
+    onAlarmChange: (Alarm) -> Unit,
+    viewModel: AlarmViewModel,
+    navController: NavController,
+    alarm: Alarm
+) {
 
     val state by viewModel.barcodeUIState.collectAsStateWithLifecycle()
 
@@ -502,30 +514,59 @@ fun AddBarcode(showPopup: Boolean, onClickOutside: () -> Unit, viewModel: AlarmV
                         .clip(RoundedCornerShape(4.dp)),
                 ) {
 
-                    Row (horizontalArrangement = Arrangement.SpaceBetween) {
-                        Button( onClick = {}) { Text(text="Cancel") }
-                        Button( onClick = {}) { Text(text="Set new Barcode") }
+                    Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                        Button(onClick = { onClickOutside() }) { Text(text = "Cancel") }
+                        Button(onClick = { navController.navigate("CameraSetup/setBarcode") }) {
+                            Text(
+                                text = "Set new Barcode"
+                            )
+                        }
 
                     }
 
-                    Spacer(Modifier. height(20.dp))
+                    Spacer(Modifier.height(20.dp))
 
-                    LazyColumn (Modifier
-                        .fillMaxHeight()){
+                    LazyColumn(
+                        Modifier
+                            .fillMaxHeight()
+                    ) {
 
                         itemsIndexed(state) { _, barcode ->
 
                             OutlinedCard(
+                                onClick = {
+                                   onAlarmChange(alarm.copy(barcode = barcode.barcode, barcodeName = barcode.name))
+                                    onClickOutside()
+
+                                },
+
                                 Modifier
                                     .fillMaxWidth()
                                     .padding(4.dp),
 
+
                                 ) {
                                 Row(
-                                    Modifier.fillMaxWidth().padding(4.dp),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(text = barcode.name, fontSize = 30.sp)
+                                    Text(text = barcode.name, fontSize = 24.sp)
+//                                    If we delete the Barcode then everything else linked with it might be broken
+//                                    Except if we never use the Barcodedb to actually confirm a barcode scanned its fine
+                                    Button(
+                                        contentPadding = PaddingValues(4.dp),
+                                        modifier = Modifier.defaultMinSize(minWidth = 6.dp, minHeight = 6.dp),
+                                        onClick = {
+
+                                            viewModel.deleteBarcode(barcode)
+
+                                        }) {
+                                        Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete")
+                                    }
+
                                 }
 
                             }
@@ -578,7 +619,8 @@ fun Edit(
     Column(
         modifier
             .fillMaxWidth()
-            .padding(horizontal = 2.dp, vertical = 2.dp),
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(horizontalArrangement = Arrangement.SpaceBetween) {
@@ -641,84 +683,108 @@ fun Edit(
             }
         )
 
-        Row() {
 
-            OutlinedCard(
+
+        OutlinedCard(
+            onClick = { showPopup = true },
+            modifier = Modifier
+                .fillMaxWidth()
+//                .padding(8.dp)
+//                label = { Text("BarcodeTask")}
+        ) {
+
+
+            Row(
                 Modifier
-                    .weight(1f)
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+
             ) {
 
-                Text(text = "BarcodeTask")
+                Column() {
+                    Text(text = "BarcodeTask")
+                    Spacer(Modifier.height(6.dp))
+                    Text(text = alarm.barcodeName, color= Color.Gray, fontSize = 14.sp)
+
+
+                }
                 Switch(
                     checked = alarm.barcodeTask,
                     onCheckedChange = {
-                        showPopup = true
+                        if (alarm.barcodeName == "No Barcode Selected") {
+                            showPopup = true
+                        } else {
+                            alarm = alarm.copy(barcodeTask = !alarm.barcodeTask)
+                        }
 
 
-//                        alarm = alarm.copy(barcodeTask = !alarm.barcodeTask)
                     }
                 )
-            }
-            Spacer(Modifier.weight(0.1f))
 
-            OutlinedCard(
-                Modifier
-                    .weight(1f)
-                    .padding(8.dp)
-            ) {
-
-                Text(text = "Shake Task")
-                Switch(
-                    checked = alarm.shakeTask,
-                    onCheckedChange = {
-                        alarm = alarm.copy(shakeTask = !alarm.shakeTask)
-                    }
-                )
             }
         }
+        Spacer(Modifier.height(8.dp))
 
-        Row(Modifier.fillMaxWidth()) {
+        OutlinedCard(
+            Modifier
+                .padding(8.dp)
+        ) {
 
-            OutlinedCard(
-                Modifier
-                    .weight(1f)
-                    .padding(8.dp) // Padding outside the card
-            ) {
-
-                Text(text = "Math Task")
-                Switch(
-                    checked = alarm.mathTask,
-                    onCheckedChange = {
-                        alarm = alarm.copy(mathTask = !alarm.mathTask)
-                    }
-                )
-            }
-
-            Spacer(Modifier.weight(0.1f))
-
-            OutlinedCard(
-                Modifier
-                    .weight(1f)
-                    .padding(8.dp)
-            ) {
-
-                Text(text = "Memory Task")
-                Switch(
-                    checked = alarm.memoryTask,
-                    onCheckedChange = {
-                        alarm = alarm.copy(memoryTask = !alarm.memoryTask)
-                    }
-                )
-            }
+            Text(text = "Shake Task")
+            Switch(
+                checked = alarm.shakeTask,
+                onCheckedChange = {
+                    alarm = alarm.copy(shakeTask = !alarm.shakeTask)
+                }
+            )
+        }
 
 
+
+
+        OutlinedCard(
+            modifier = Modifier
+                .padding(8.dp)
+        ) {
+
+            Text(text = "Math Task")
+            Switch(
+                checked = alarm.mathTask,
+                onCheckedChange = {
+                    alarm = alarm.copy(mathTask = !alarm.mathTask)
+                }
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        OutlinedCard(
+            Modifier
+                .padding(8.dp)
+        ) {
+
+            Text(text = "Memory Task")
+            Switch(
+                checked = alarm.memoryTask,
+                onCheckedChange = {
+                    alarm = alarm.copy(memoryTask = !alarm.memoryTask)
+                }
+            )
         }
 
 
     }
 
-    AddBarcode(showPopup = showPopup, onClickOutside = { showPopup = false }, viewModel)
+    AddBarcode(
+        showPopup = showPopup,
+        onClickOutside = { showPopup = false },
+        onAlarmChange = {newAlarm -> alarm = newAlarm},
+        viewModel,
+        navController,
+        alarm
+    )
 
 
 }

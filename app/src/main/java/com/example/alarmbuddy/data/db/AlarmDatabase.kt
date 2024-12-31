@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.alarmbuddy.data.Converters
 
-@Database(entities = [AlarmEntity::class], version = 3)
+@Database(entities = [AlarmEntity::class], version = 4)
 @TypeConverters(Converters::class) // Register the converters
 abstract class AlarmDatabase : RoomDatabase() {
 

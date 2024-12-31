@@ -157,6 +157,7 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
 
         viewModel.updateAlarm(alarm.copy(activated = false))
 
+
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
 
             Button(
@@ -169,7 +170,7 @@ fun Ringing(alarmId: Int, viewModel: AlarmViewModel, context: Context) {
             }
 
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Alarm Triggered! Alarm Id is ${alarmId}", fontSize = 24.sp)
+//                Text("Alarm Triggered! Alarm Id is ${alarmId}", fontSize = 24.sp)
                 Text(
                     "Alarm Triggered! Alarm Time is ${alarm.time.hour} : ${alarm.time.minute}",
                     fontSize = 24.sp
