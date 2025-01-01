@@ -151,8 +151,6 @@ fun AddnewBarcode(
 
     var name by remember { mutableStateOf("MyAlarm") }
 
-
-
     if (showPopup) {
 
 
@@ -206,9 +204,7 @@ fun Camera(
     navController: NavController,
     viewModel: AlarmViewModel,
     barcodeToConfirm: String = "None",
-    alarmIdToStop: Int = -1,
     barcodeConfirmed: () -> Unit = {},
-
 ) {
 
     var showPopup = remember { mutableStateOf(false) }
@@ -230,7 +226,7 @@ fun Camera(
     val imageAnalysis = ImageAnalysis.Builder().build()
     imageAnalysis.setAnalyzer(
         ContextCompat.getMainExecutor(context),
-        BarcodeAnalyzer(context, Intent, navController, viewModel, showPopup, barcodeState, barcodeToConfirm)
+        BarcodeAnalyzer(context, Intent, showPopup, barcodeState)
     )
 
 
@@ -246,6 +242,7 @@ fun Camera(
 
     if (Intent == "confirmBarcode" && barcodeState.value == barcodeToConfirm) {
         Toast.makeText(context, "Confirmed the correct barcode", Toast.LENGTH_SHORT).show()
+        barcodeConfirmed()
 
     }
 
@@ -272,11 +269,8 @@ private suspend fun Context.getCameraProvider(): ProcessCameraProvider =
 class BarcodeAnalyzer(
     private val context: Context,
     private val Intent: String,
-    private val navController: NavController,
-    private val viewModel: AlarmViewModel,
     private var showPopup: MutableState<Boolean>,
     private var barcodeState: MutableState<String>,
-    private var barcodeToConfirm: String
 ) : ImageAnalysis.Analyzer {
 
 
@@ -300,16 +294,16 @@ class BarcodeAnalyzer(
                     ?.joinToString(",")
                     ?.let {
                         if (Intent == "setBarcode") {
-//                            setBarcode(navController, context, viewModel, it, imageProxy)
                             showPopup.value = true
                             barcodeState.value = it
                             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-
                             imageProxy.close()
 
 
                         } else if (Intent == "confirmBarcode") {
                             barcodeState.value = it
+                            imageProxy.close()
+
 
 
                         } else {
@@ -328,23 +322,5 @@ class BarcodeAnalyzer(
 
         }
     }
-
-}
-
-fun setBarcode(
-    navController: NavController,
-    context: Context,
-    viewModel: AlarmViewModel,
-    barcode: String,
-    imageProxy: ImageProxy
-) {
-
-
-    viewModel.addBarcode(com.example.alarmbuddy.data.Barcode(name = "MyBarcode", barcode = barcode))
-//    Toast.makeText(context, "Succesfully added to the database", Toast.LENGTH_SHORT).show()
-    navController.popBackStack("CameraSetup/setBarcode", inclusive = true)
-    imageProxy.close()
-    return
-
 
 }

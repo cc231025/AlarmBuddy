@@ -110,6 +110,8 @@ fun AlarmBuddyApp(
     val navController = rememberNavController()
 
 
+
+
     LaunchedEffect(navigateTo) {
         if (navigateTo == "Ringing") {
             navController.navigate("Ringing")

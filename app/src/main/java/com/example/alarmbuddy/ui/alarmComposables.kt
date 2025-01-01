@@ -186,8 +186,8 @@ fun Ringing(
                         navController,
                         viewModel,
                         barcodeToConfirm = alarm.barcode,
-                        alarmIdToStop = alarm.id,
                         barcodeConfirmed = {
+                            stopAlarmService(context)
                             currentTask++
                         })
 
@@ -196,7 +196,11 @@ fun Ringing(
                 else{currentTask ++}
 
             }
-//            1 -> other tasks 1 by 1 and stuff
+            1 -> {
+                Text(text="second task")
+            }
+//            2-> Mathtask
+//        3 -> Memory Task
         }
 
 
