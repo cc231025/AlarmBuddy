@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.hardware.SensorManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.getSystemService
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -224,10 +226,15 @@ fun Ringing(
 
             1 -> {
                 if (alarm.shakeTask) {
-                    ShakeTask(onShakeComplete = {
-                        currentTask++
 
+                    val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
+                    ShakeTask(
+                        sensorManager,
+                        onShakeComplete = {
+                        currentTask++
                     })
+
                 } else currentTask++
             }
 
@@ -238,13 +245,13 @@ fun Ringing(
                 } else currentTask++
 
             }
-//            3 -> {
-//                if (alarm.memoryTask) {
-//                    MemoryTask(onMemoryComplete = { currentTask++ })
-//
-//                } else currentTask++
-//
-//            }
+            3 -> {
+                if (alarm.memoryTask) {
+                    MemoryTask(onMemoryComplete = { currentTask++ })
+
+                } else currentTask++
+
+            }
 
             4 -> {
 

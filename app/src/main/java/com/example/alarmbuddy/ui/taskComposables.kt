@@ -1,5 +1,9 @@
 package com.example.alarmbuddy.ui
 
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import androidx.camera.core.processing.Operation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,58 +52,90 @@ import kotlin.random.Random
 
 @Composable
 fun ShakeTask(
-    onShakeComplete: () -> Unit,
+    sensorManager: SensorManager,
+    onShakeComplete: () -> Unit
+) {
+    var count by remember { mutableStateOf(0f) }
+    var barColor by remember { mutableStateOf(Color.Red) }
+    val shakeThreshold = 12f // Adjust as needed
+    val minShakeCount = 50
 
+    val shakeListener = remember {
+        object : SensorEventListener {
+            var lastAcceleration = 0f
+            var currentAcceleration = 0f
+            var shakeAcceleration = 0f
 
+            override fun onSensorChanged(event: SensorEvent?) {
+                if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+                    val x = event.values[0]
+                    val y = event.values[1]
+                    val z = event.values[2]
+
+                    lastAcceleration = currentAcceleration
+                    currentAcceleration = kotlin.math.sqrt((x * x + y * y + z * z).toDouble()).toFloat()
+                    val delta = currentAcceleration - lastAcceleration
+                    shakeAcceleration = shakeAcceleration * 0.9f + delta // Smooth the value
+
+                    if (shakeAcceleration > shakeThreshold) {
+                        count++
+                        if (count >= 35 && barColor == Color.Red){
+                            barColor = Color.Green
+
+                        }
+                        if (count >= minShakeCount) {
+                            sensorManager.unregisterListener(this)
+                            onShakeComplete()
+                        }
+                    }
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+                // No-op
+            }
+        }
+    }
+
+    DisposableEffect(Unit){
+        val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorManager.registerListener(
+            shakeListener,
+            accelerometer,
+            SensorManager.SENSOR_DELAY_UI
+        )
+
+        onDispose {
+            sensorManager.unregisterListener(shakeListener)
+        }
+    }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(30.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(textAlign = TextAlign.Center, text = "Shake your Phone 20 Times to stop the Alarm!")
+        Spacer(Modifier.height(50.dp))
 
+        LinearProgressIndicator(
+            progress = count / minShakeCount,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(30.dp)
+                .clip(RoundedCornerShape(20.dp)),
+            color = barColor,
+            trackColor = Color.White
+        )
 
-//    val shakeDetector = rememberShakeDetector()
-//    var count by remember { mutableStateOf(0f) }
-//    var barColor by remember { mutableStateOf(Color.Red) }
-//
-//    LaunchedEffect(Unit) {
-//        shakeDetector.start()
-//    }
-//
-//    shakeDetector.onShake {
-//        count++
-//        if (count >= 15) barColor = Color.Green
-//        if (count >= 5) {
-//            shakeDetector.stop()
-//            onShakeComplete()
-//        }
-//    }
-//
-//    Column(
-//        Modifier
-//            .fillMaxSize()
-//            .padding(30.dp),
-//        verticalArrangement = Arrangement.Center,
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//
-//        Text(textAlign = TextAlign.Center, text = "Shake your Phone 20 Times to stop the Alarm!")
-//        Spacer(Modifier.height(50.dp))
-//
-//        LinearProgressIndicator(
-//            progress = { count / 20f },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(30.dp)
-//                .clip(RoundedCornerShape(20.dp)),
-//
-//            color = barColor,
-//            trackColor = Color.White
-//
-//        )
-//
-//        Spacer(Modifier.height(50.dp))
-//
-//        Text(textAlign = TextAlign.Center, text = "Shakes: ${count.toInt()}")
-//    }
+        Spacer(Modifier.height(50.dp))
 
+        Text(textAlign = TextAlign.Center, text = "Shakes: ${count.toInt()}")
+    }
 }
+
 
 
 fun calc(a: Int, b: Int, operator: String?): Int {
@@ -296,7 +333,7 @@ fun MemoryTask(
 
     LaunchedEffect(delayRender) {
         if(delayRender){
-            delay(1000)
+            delay(500)
 
             tileArray[lastTileClicked].enabled = false
             tileArray[currentTile].enabled = false
