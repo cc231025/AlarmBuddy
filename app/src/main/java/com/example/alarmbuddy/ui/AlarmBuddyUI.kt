@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
@@ -72,6 +73,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+//import chaintech.network.cmpshakedetection.ShakeDetector
 import com.example.alarmbuddy.AlarmApplication
 import com.example.alarmbuddy.R
 import com.example.alarmbuddy.data.Alarm
@@ -191,6 +193,9 @@ fun AlarmBuddyApp(
 
 
             composable(Screens.Ringing.name) {
+                BackHandler(true) {
+                    //Do nothing to stop the user from navigating out of the Ringing Screen
+                }
                 Box(modifier = Modifier.padding(innerPadding)) {
                     Ringing(
                         alarmId,
@@ -213,16 +218,16 @@ fun AlarmBuddyApp(
 //                }
 //            }
 
-            composable("CameraSetup/{Intent}") { navBackStackEntry ->
-                val Intent = navBackStackEntry.arguments?.getString("Intent") ?: "setBarcode"
-
-                CameraSetup(
-                    navController,
-                    context,
-                    Intent
-
-                )
-            }
+//            composable("CameraSetup/{Intent}") { navBackStackEntry ->
+//                val Intent = navBackStackEntry.arguments?.getString("Intent") ?: "setBarcode"
+//
+//                CameraSetup(
+//                    navController,
+//                    context,
+//                    Intent
+//
+//                )
+//            }
 
             composable("Camera/{Intent}") { navBackStackEntry ->
                 val Intent = navBackStackEntry.arguments?.getString("Intent") ?: "setBarcode"
@@ -235,6 +240,14 @@ fun AlarmBuddyApp(
 
                 )
             }
+
+//            composable("Memory") { navBackStackEntry ->
+//
+//                MemoryTask(
+//                    onMemoryComplete = {Toast.makeText(context, "memory complete", Toast.LENGTH_SHORT).show()}
+//
+//                )
+//            }
         }
     }
 }
@@ -259,6 +272,12 @@ fun Home(
             }) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Alarm")
         }
+//        Button(
+//            onClick = {
+//                navController.navigate("Memory")
+//            }) {
+//            Icon(imageVector = Icons.Filled.Edit, contentDescription = "Add Alarm")
+//        }
 
         LazyColumn {
 
@@ -519,7 +538,7 @@ fun AddBarcode(
 
                     Row(horizontalArrangement = Arrangement.SpaceBetween) {
                         Button(onClick = { onClickOutside() }) { Text(text = "Cancel") }
-                        Button(onClick = { navController.navigate("CameraSetup/setBarcode") }) {
+                        Button(onClick = { navController.navigate("Camera/setBarcode") }) {
                             Text(
                                 text = "Set new Barcode"
                             )

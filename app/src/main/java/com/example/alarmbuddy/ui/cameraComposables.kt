@@ -65,81 +65,81 @@ import kotlin.coroutines.suspendCoroutine
 //import com.example.alarmbuddy.data.Barcode
 
 
-@Composable
-fun CameraSetup(navController: NavController, context: Context, Intent: String) {
-
-
-    var showAlert by remember { mutableStateOf(false) }
-
-
-    // Permission request launcher
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            Toast.makeText(context, "Camera permission Granted", Toast.LENGTH_SHORT).show()
-            navController.navigate("Camera/${Intent}")
-
-//            Is granted start camera here aswell
-        } else {
-
-            showAlert = true
-
-
-        }
-    }
-
-    // Check permissions when the composable is first loaded
-    LaunchedEffect(Unit) {
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-//            Is granted start trhe camera here
-            Toast.makeText(context, "Camera permission Granted first", Toast.LENGTH_SHORT).show()
-            navController.navigate("Camera/${Intent}")
-
-
-        } else {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    if (showAlert) {
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text("Permission Required") },
-            text = { Text("Camera access is required. Please enable it in settings.") },
-            confirmButton = {
-                Button(onClick = {
-                    showAlert = false
-                    navController.navigate(Screens.Home.name)
-                    Toast.makeText(
-                        context,
-                        "Navigate to the Settings of the App to change the permission",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-
-                }) {
-                    Text("Open Settings")
-                }
-            },
-            dismissButton = {
-                Button(onClick = {
-                    showAlert = false
-                    navController.navigate(Screens.Home.name)
-                    Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT)
-                        .show()
-                }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
-}
+//@Composable
+//fun CameraSetup(navController: NavController, context: Context, Intent: String) {
+//
+//
+//    var showAlert by remember { mutableStateOf(false) }
+//
+//
+//    // Permission request launcher
+//    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.RequestPermission()
+//    ) { granted ->
+//        if (granted) {
+//            Toast.makeText(context, "Camera permission Granted", Toast.LENGTH_SHORT).show()
+//            navController.navigate("Camera/${Intent}")
+//
+////            Is granted start camera here aswell
+//        } else {
+//
+//            showAlert = true
+//
+//
+//        }
+//    }
+//
+//    // Check permissions when the composable is first loaded
+//    LaunchedEffect(Unit) {
+//        if (ContextCompat.checkSelfPermission(
+//                context,
+//                Manifest.permission.CAMERA
+//            ) == PackageManager.PERMISSION_GRANTED
+//        ) {
+////            Is granted start trhe camera here
+//            Toast.makeText(context, "Camera permission Granted first", Toast.LENGTH_SHORT).show()
+//            navController.navigate("Camera/${Intent}")
+//
+//
+//        } else {
+//            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+//        }
+//    }
+//
+//    if (showAlert) {
+//        AlertDialog(
+//            onDismissRequest = {},
+//            title = { Text("Permission Required") },
+//            text = { Text("Camera access is required. Please enable it in settings.") },
+//            confirmButton = {
+//                Button(onClick = {
+//                    showAlert = false
+//                    navController.navigate(Screens.Home.name)
+//                    Toast.makeText(
+//                        context,
+//                        "Navigate to the Settings of the App to change the permission",
+//                        Toast.LENGTH_SHORT
+//                    ).show()
+//
+//
+//                }) {
+//                    Text("Open Settings")
+//                }
+//            },
+//            dismissButton = {
+//                Button(onClick = {
+//                    showAlert = false
+//                    navController.navigate(Screens.Home.name)
+//                    Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT)
+//                        .show()
+//                }) {
+//                    Text("Cancel")
+//                }
+//            }
+//        )
+//    }
+//
+//}
 
 @Composable
 fun AddnewBarcode(
@@ -181,7 +181,7 @@ fun AddnewBarcode(
                         barcode = barcodeState
                     )
                 )
-                navController.popBackStack("CameraSetup/setBarcode", inclusive = true)
+                navController.popBackStack("Camera/setBarcode", inclusive = true)
 
             }) {
                 Text(text = "Save Barcode")
@@ -236,6 +236,7 @@ fun Camera(
         cameraProvider.bindToLifecycle(lifecycleOwner, cameraxSelector, preview, imageAnalysis)
         preview.setSurfaceProvider(previewView.surfaceProvider)
     }
+
     if (!showPopup.value) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
     }
@@ -243,6 +244,7 @@ fun Camera(
     if (Intent == "confirmBarcode" && barcodeState.value == barcodeToConfirm) {
         Toast.makeText(context, "Confirmed the correct barcode", Toast.LENGTH_SHORT).show()
         barcodeConfirmed()
+
 
     }
 

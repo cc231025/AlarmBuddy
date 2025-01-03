@@ -9,10 +9,15 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
@@ -31,6 +36,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -72,18 +80,13 @@ fun scheduleExactAlarm(context: Context, alarm: Alarm) {
 //    intent.putExtra("alarm", alarm)
 
     val pendingIntent = PendingIntent.getBroadcast(
-        context,
-        alarm.id,
-        intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        context, alarm.id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
     Log.d("AlarmApp", "Alarm set for: ${calendar.time}")
 
     alarmManager.setExactAndAllowWhileIdle(
-        AlarmManager.RTC_WAKEUP,
-        calendar.timeInMillis,
-        pendingIntent
+        AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent
     )
 
 
@@ -105,10 +108,7 @@ fun cancelAlarm(context: Context, alarm: Alarm) {
     }
 
     val pendingIntent = PendingIntent.getBroadcast(
-        context,
-        alarm.id,
-        intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        context, alarm.id, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
     alarmManager.cancel(pendingIntent)
@@ -145,10 +145,7 @@ fun getAudioResource(audioFileName: String): Int? {
 
 @Composable
 fun Ringing(
-    alarmId: Int,
-    viewModel: AlarmViewModel,
-    context: Context,
-    navController: NavController
+    alarmId: Int, viewModel: AlarmViewModel, context: Context, navController: NavController
 ) {
 
     val state by viewModel.alarmUIState.collectAsStateWithLifecycle()
@@ -175,70 +172,137 @@ fun Ringing(
 
     var currentTask by remember { mutableIntStateOf(0) }
 
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(30.dp), horizontalAlignment = Alignment.CenterHorizontally
+    ) {
 
-        when (currentTask){
+        when (currentTask) {
             0 -> {
                 if (alarm.barcodeTask) {
-                    Camera(
-                        context,
-                        "confirmBarcode",
-                        navController,
-                        viewModel,
-                        barcodeToConfirm = alarm.barcode,
-                        barcodeConfirmed = {
+                    Row(Modifier.fillMaxSize(0.80f)) {
+                        Camera(context,
+                            "confirmBarcode",
+                            navController,
+                            viewModel,
+                            barcodeToConfirm = alarm.barcode,
+                            barcodeConfirmed = {
+//                                stopAlarmService(context)
+                                currentTask++
+                            })
+                    }
+                    Column(
+                        Modifier
+                            .fillMaxSize(),
+//                            .align(Alignment.CenterHorizontally),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Scan the Barcode ",
+                            fontSize = 24.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            text = alarm.barcodeName,
+                            color = Color.Red,
+                            fontSize = 30.sp,
+                        )
+                        Spacer(Modifier.height(10.dp))
+
+                        Text(
+                            text = " to stop the alarm",
+                            fontSize = 24.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                } else currentTask++
+
+            }
+
+            1 -> {
+                if (alarm.shakeTask) {
+                    ShakeTask(onShakeComplete = {
+                        currentTask++
+
+                    })
+                } else currentTask++
+            }
+
+            2 -> {
+                if (alarm.mathTask) {
+                    MathTask(onMathComplete = { currentTask++ })
+
+                } else currentTask++
+
+            }
+//            3 -> {
+//                if (alarm.memoryTask) {
+//                    MemoryTask(onMemoryComplete = { currentTask++ })
+//
+//                } else currentTask++
+//
+//            }
+
+            4 -> {
+
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+
+                    Button(
+//                Note create some stopchecks here - since we cant stop the instance twice - might crash the app
+                        onClick = {
                             stopAlarmService(context)
-                            currentTask++
-                        })
+
+                        }) {
+                        Icon(imageVector = Icons.Filled.Clear, contentDescription = "Stop Alarm")
+                    }
 
 
                 }
-                else{currentTask ++}
+            }
 
-            }
-            1 -> {
-                Text(text="second task")
-            }
-//            2-> Mathtask
+        }
 //        3 -> Memory Task
-        }
-
-
-
-
     }
 
-
-
-
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-
-        Button(
-//                Note create some stopchecks here - since we cant stop the instance twice - might crash the app
-            onClick = {
-                stopAlarmService(context)
-
-            }) {
-            Icon(imageVector = Icons.Filled.Clear, contentDescription = "Stop Alarm")
-        }
-
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-//                Text("Alarm Triggered! Alarm Id is ${alarmId}", fontSize = 24.sp)
-
-            Text(
-                "Scan the Barcode ${alarm.barcodeName} to stop the alarm",
-                fontSize = 24.sp
-            )
-            Text(
-                "Alarm Triggered! Get up!!!",
-                fontSize = 24.sp
-            )
-
-
-        }
-    }
 
 }
+
+
+//    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+//
+//        Button(
+////                Note create some stopchecks here - since we cant stop the instance twice - might crash the app
+//            onClick = {
+//                stopAlarmService(context)
+//
+//            }) {
+//            Icon(imageVector = Icons.Filled.Clear, contentDescription = "Stop Alarm")
+//        }
+//
+//        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+////                Text("Alarm Triggered! Alarm Id is ${alarmId}", fontSize = 24.sp)
+//
+//            Text(
+//                "Scan the Barcode ${alarm.barcodeName} to stop the alarm",
+//                fontSize = 24.sp
+//            )
+//            Text(
+//                "Alarm Triggered! Get up!!!",
+//                fontSize = 24.sp
+//            )
+//
+//
+//        }
+//    }
+
+//}
 
 
 fun stopAlarmService(context: Context) {

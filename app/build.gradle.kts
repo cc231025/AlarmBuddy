@@ -55,6 +55,10 @@ android {
 
 dependencies {
 
+//    ShakeitUp
+//    implementation(libs.compose.multiplatform.shake.detection)
+
+
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
