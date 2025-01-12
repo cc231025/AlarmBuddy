@@ -7,6 +7,9 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.alarmbuddy.data.Converters
 
+// Setting up the Database here
+// Note if anything changes in the Entities during developement the version number has to be incremented, or it will complain
+
 @Database(entities = [AlarmEntity::class], version = 4)
 @TypeConverters(Converters::class) // Register the converters
 abstract class AlarmDatabase : RoomDatabase() {

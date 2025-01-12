@@ -79,6 +79,7 @@ dependencies {
 
 //    Barcode dependencie
     implementation("com.google.mlkit:barcode-scanning:17.1.0")
+    implementation("com.google.accompanist:accompanist-drawablepainter:0.35.0-alpha")
 
 
 

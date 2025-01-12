@@ -2,6 +2,8 @@ package com.example.alarmbuddy.ui
 
 import android.app.AlarmManager
 import android.content.Context
+import android.content.res.Resources.Theme
+import android.hardware.SensorManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -36,6 +38,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
@@ -49,6 +53,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerColors
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,6 +67,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -80,10 +91,11 @@ import com.example.alarmbuddy.data.Alarm
 import com.example.alarmbuddy.ui.theme.Typography
 import java.time.LocalTime
 import java.util.Calendar
+import java.util.Locale
 
 
 enum class Screens {
-    Home, Add, Edit, Ringing, BarcodeTask, ShakeTask, Camera, CameraSetup
+    Home, Add, Ringing,
 }
 
 
@@ -94,17 +106,14 @@ fun AlarmBuddyApp(
     alarmId: Int
 ) {
 
-    //    Get Application context
+    //    Get needed Application context, alarmManager vieModel...
     val context = LocalContext.current.applicationContext as AlarmApplication
-
 
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     val nextAlarm = alarmManager.nextAlarmClock
     Log.d("AlarmManager", "Next alarm time: ${nextAlarm?.triggerTime}")
 
-
-//  Get viewModel and Factory stuff - with this we dont need a extra file I think ...
     val viewModel: AlarmViewModel = viewModel(
         factory = context.alarmViewModelFactory
     )
@@ -112,8 +121,22 @@ fun AlarmBuddyApp(
     val navController = rememberNavController()
 
 
+    val alarmSoundArr = listOf(
+        R.string.classic_alarm,
+        R.string.pain_alarm,
+        R.string.granular_alarm,
+        R.string.ambient_scifi,
+        R.string.increasing_panic,
+        R.string.level_up,
+        R.string.relaxing_piano,
+        R.string.school_clock,
+        R.string.sunny_morning,
+        R.string.synth_power
+    )
 
 
+
+//  If navigatTo has a value from before Set Intent or SharedPreferences navigate to Ringing
     LaunchedEffect(navigateTo) {
         if (navigateTo == "Ringing") {
             navController.navigate("Ringing")
@@ -146,14 +169,12 @@ fun AlarmBuddyApp(
             }
         ) {
 
-//            In Scaffold we have our screens, in ToDo Screen we put a Column with every todo that was created and a Add button
             composable(
                 Screens.Home.name,
             ) {
                 Box(modifier = Modifier.padding(innerPadding)) {
                     Home(
                         modifier,
-//                    AlarmViewModel,
                         navController,
                         viewModel,
                         context
@@ -161,15 +182,14 @@ fun AlarmBuddyApp(
                 }
             }
 
-//            In add we just make a form to add text and create a new note
             composable(Screens.Add.name) {
                 Box(modifier = Modifier.padding(innerPadding)) {
                     Add(
                         modifier,
-//                    AlarmViewModel,
                         navController,
                         viewModel,
-                        context
+                        context,
+                        alarmSoundArr
                     )
 
                 }
@@ -182,10 +202,10 @@ fun AlarmBuddyApp(
                     Edit(
                         id,
                         modifier,
-//                    AlarmViewModel,
                         navController,
                         viewModel,
-                        context
+                        context,
+                        alarmSoundArr
                     )
 
                 }
@@ -199,35 +219,14 @@ fun AlarmBuddyApp(
                 Box(modifier = Modifier.padding(innerPadding)) {
                     Ringing(
                         alarmId,
-//                        modifier,
-////                    AlarmViewModel,
                         viewModel,
                         context,
                         navController
 
-                        )
+                    )
 
                 }
             }
-
-//            composable(Screens.Camera.name) {
-//                Box(modifier = Modifier.padding(innerPadding)) {
-//                    Camera(
-//                    )
-//
-//                }
-//            }
-
-//            composable("CameraSetup/{Intent}") { navBackStackEntry ->
-//                val Intent = navBackStackEntry.arguments?.getString("Intent") ?: "setBarcode"
-//
-//                CameraSetup(
-//                    navController,
-//                    context,
-//                    Intent
-//
-//                )
-//            }
 
             composable("Camera/{Intent}") { navBackStackEntry ->
                 val Intent = navBackStackEntry.arguments?.getString("Intent") ?: "setBarcode"
@@ -240,23 +239,16 @@ fun AlarmBuddyApp(
 
                 )
             }
-
-//            composable("Memory") { navBackStackEntry ->
-//
-//                MemoryTask(
-//                    onMemoryComplete = {Toast.makeText(context, "memory complete", Toast.LENGTH_SHORT).show()}
-//
-//                )
-//            }
         }
     }
 }
 
+
+//Our Initial Homescreen, just Give the option to add a new alarm and Show all Alarms from the database
 @Composable
 fun Home(
     modifier: Modifier = Modifier,
     navController: NavController,
-//  Viewmodel,
     viewModel: AlarmViewModel,
     context: Context
 ) {
@@ -272,12 +264,6 @@ fun Home(
             }) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Alarm")
         }
-//        Button(
-//            onClick = {
-//                navController.navigate("Memory")
-//            }) {
-//            Icon(imageVector = Icons.Filled.Edit, contentDescription = "Add Alarm")
-//        }
 
         LazyColumn {
 
@@ -292,7 +278,9 @@ fun Home(
 
 }
 
-
+//Single Alarm Instance displayed in the Home Screen
+//Bases on the alarms values displays which tasks are active, lets the user delete or navigate to the edit screen
+//And allows enabling/disabling the alarm
 @Composable
 fun AlarmItem(
     alarm: Alarm,
@@ -316,11 +304,15 @@ fun AlarmItem(
 
             Column(Modifier.padding(16.dp)) {
 
-//                If Completed grey and cross out header text
                 Row(horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
                         style = Typography.headlineMedium,
-                        text = "${alarm.time.hour}:${alarm.time.minute}",
+                        text = String.format(
+                            Locale.getDefault(),
+                            "%02d:%02d",
+                            alarm.time.hour,
+                            alarm.time.minute
+                        ),
                         color = Color.Gray
 
                     )
@@ -350,7 +342,6 @@ fun AlarmItem(
                         Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit")
                     }
 
-
                 }
 
 
@@ -362,29 +353,16 @@ fun AlarmItem(
                 Switch(
                     checked = alarm.activated,
                     onCheckedChange = {
-//                    Some logic fuckery here, the alarmstate is changed before it reaches here even
-//                    So since its allready changed we have to use !alarm - dirty work around but it works after all
+//                    Some weird logic here, the alarmstate is changed before it reaches here even
+//                    So since its already changed we have to use !alarm - dirty work around but it works after all
                         if (!alarm.activated) {
-//                        Nolt sure if needed
-                            checkAndRequestExactAlarmPermission(context)
 
                             scheduleExactAlarm(context, alarm)
-                            Toast.makeText(
-                                context,
-                                "Alarm with id: ${alarm.id} Set",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
                             viewModel.updateAlarm(alarm.copy(activated = true))
 
 
                         } else {
                             cancelAlarm(context, alarm)
-                            Toast.makeText(
-                                context,
-                                "Alarm with id: ${alarm.id} Canceled",
-                                Toast.LENGTH_SHORT
-                            ).show()
                             viewModel.updateAlarm(alarm.copy(activated = false))
 
 
@@ -393,26 +371,89 @@ fun AlarmItem(
                 )
 
                 Text(text = alarm.audioFile)
+                Spacer(Modifier.height(6.dp))
+                Row() {
+
+                    if(alarm.barcodeTask){
+
+                        Icon(
+                            painter = painterResource(R.drawable.barcode),
+                            contentDescription = "Edit",
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(colorResource(id = R.color.secondary))
+                                .padding(4.dp),
+                            tint = Color.Black
+                        )
+                        Spacer(Modifier.width(6.dp))
+                    }
+
+                    if(alarm.shakeTask) {
+
+
+                        Icon(
+                            painter = painterResource(R.drawable.shake),
+                            contentDescription = "Edit",
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(colorResource(id = R.color.secondary))
+                                .padding(4.dp),
+                            tint = Color.Black
+                        )
+
+                        Spacer(Modifier.width(6.dp))
+                    }
+
+                    if(alarm.memoryTask) {
+
+
+                        Icon(
+                            painter = painterResource(R.drawable.memory),
+                            contentDescription = "Edit",
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(colorResource(id = R.color.secondary))
+                                .padding(4.dp),
+                            tint = Color.Black
+                        )
+                        Spacer(Modifier.width(6.dp))
+                    }
+
+                    if(alarm.mathTask) {
+
+
+                        Icon(
+                            painter = painterResource(R.drawable.math),
+                            contentDescription = "Edit",
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(colorResource(id = R.color.secondary))
+                                .padding(4.dp),
+                            tint = Color.Black
+                        )
+                    }
+                }
+
+
             }
         }
     }
 }
 
-
+//TimePicker is for some reason a Experimental Feature, but since it is very convenient I decided to tolerate that
+// Here we can Set our new Alarms with all settings
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Add(
     modifier: Modifier = Modifier,
     navController: NavController,
     viewModel: AlarmViewModel,
-    context: Context
+    context: Context,
+    alarmSoundArr: List<Int>
 ) {
 
+
     var dropDownExpanded by remember { mutableStateOf(false) }
-
-    var volume by remember { mutableStateOf(0.5f) }
-
-    var audiofile by remember { mutableStateOf(context.getString(R.string.classic_alarm)) }
 
 
     val currentTime = Calendar.getInstance()
@@ -423,79 +464,285 @@ fun Add(
         is24Hour = true,
     )
 
+    var showPopup by remember { mutableStateOf(false) }
 
-    Column(
-        modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp, vertical = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(horizontalArrangement = Arrangement.SpaceBetween) {
-            Button(onClick = {
-                navController.navigate(Screens.Home.name)
-            }) { Text(text = "Cancel") }
-            Button(onClick = {
-                viewModel.addAlarm(
-                    Alarm(
-                        audioFile = audiofile,
-                        barcode = "12345",
-                        time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0),
-                        volume = volume,
-
-                        )
-                )
-                navController.navigate(Screens.Home.name)
-            }) { Text(text = "Save") }
-        }
-        TimePicker(
-            state = timePickerState,
+    var alarmState = Alarm(
+        audioFile = context.getString(R.string.classic_alarm),
+        time = LocalTime.of(
+            currentTime.get(Calendar.HOUR_OF_DAY),
+            currentTime.get(Calendar.MINUTE),
+            0
         )
+    )
+
+    var alarm by remember { mutableStateOf(alarmState.copy()) }
 
 
-        Box(
+
+    Box(Modifier.fillMaxSize()) {
+
+
+        Column(
             modifier
-                .border(border = BorderStroke(2.dp, Color.Magenta))
-                .padding(4.dp)
                 .fillMaxWidth()
-                .clickable { dropDownExpanded = !dropDownExpanded }) {
-            Text(text = audiofile)
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 66.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                Button(colors = MainButtonColors(), onClick = {
+                    navController.navigate(Screens.Home.name)
+                }) {
+                    Icon(imageVector = Icons.Filled.Clear, contentDescription = "Cancel")
+                }
+            }
 
-            DropdownMenu(
-                expanded = dropDownExpanded,
-                onDismissRequest = { dropDownExpanded = false }
+            Spacer(Modifier.height(20.dp))
+            TimePicker(
+                state = timePickerState,
+
+                )
+
+            OutlinedCard(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { dropDownExpanded = !dropDownExpanded }
+                    .padding(0.dp)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = alarm.audioFile)
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = "Dropdown",
+                        tint = colorResource(id = R.color.highlight)
+                    )
+
+
+                }
+                DropdownMenu(
+                    modifier = Modifier.fillMaxWidth(),
+                    expanded = dropDownExpanded,
+                    onDismissRequest = { dropDownExpanded = false }
+                ) {
+                    alarmSoundArr.map { sound ->
+
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(id = sound)) },
+                            onClick = {
+                                alarm.audioFile = context.getString(sound)
+                                dropDownExpanded = false
+                            }
+                        )
+
+
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp)
             ) {
-                DropdownMenuItem(
-                    text = { Text("Classic Alarm") },
-                    onClick = {
-                        audiofile = context.getString(R.string.classic_alarm)
-                        dropDownExpanded = false
-                    }
+                Text(
+                    text = "Alarm Volume",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 0.dp),
+                    fontSize = 14.sp
                 )
-                DropdownMenuItem(
-                    text = { Text("Granular Alarm") },
-                    onClick = {
-                        audiofile = context.getString(R.string.granular_alarm)
-                        dropDownExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Pain Alarm") },
-                    onClick = {
-                        audiofile = context.getString(R.string.pain_alarm)
-                        dropDownExpanded = false
+                Slider(
+                    modifier = Modifier.padding(vertical = 0.dp),
+                    value = alarm.volume,
+                    onValueChange = { volume ->
+                        alarm = alarm.copy(volume = volume)
                     }
                 )
             }
+
+
+
+            OutlinedCard(
+                onClick = { showPopup = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+
+                    Column() {
+                        Text(text = "BarcodeTask")
+                        Spacer(Modifier.height(6.dp))
+                        Text(text = alarm.barcodeName, color = Color.Gray, fontSize = 14.sp)
+
+
+                    }
+                    Switch(
+                        checked = alarm.barcodeTask,
+                        onCheckedChange = {
+                            if (alarm.barcodeName == "No Barcode Selected") {
+                                showPopup = true
+                            } else {
+                                alarm = alarm.copy(barcodeTask = !alarm.barcodeTask)
+                            }
+
+
+                        }
+                    )
+
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedCard(
+                Modifier
+                    .fillMaxWidth()
+            ) {
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+
+                    Column() {
+                        Text(text = "Shake Task")
+
+                    }
+                    Switch(
+                        checked = alarm.shakeTask,
+                        onCheckedChange = {
+                            alarm = alarm.copy(shakeTask = !alarm.shakeTask)
+                        }
+                    )
+
+                }
+
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedCard(
+                Modifier
+                    .fillMaxWidth()
+            ) {
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+
+                    Column() {
+                        Text(text = "Math Task")
+
+                    }
+                    Switch(
+                        checked = alarm.mathTask,
+                        onCheckedChange = {
+                            alarm = alarm.copy(mathTask = !alarm.mathTask)
+                        }
+                    )
+
+                }
+
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedCard(
+                Modifier
+                    .fillMaxWidth()
+            ) {
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+
+                    Column() {
+                        Text(text = "Memory Task")
+
+                    }
+                    Switch(
+                        checked = alarm.memoryTask,
+                        onCheckedChange = {
+                            alarm = alarm.copy(memoryTask = !alarm.memoryTask)
+                        }
+                    )
+
+                }
+
+            }
+
+
         }
 
-        Slider(
-            value = volume,
-            onValueChange = { volume = it }
+
+// An extra Composable to show our AddBarcode Pop Up, from there we can navigate to the camera to set new barcodes to use for all other alarms
+        AddBarcode(
+            showPopup = showPopup,
+            onClickOutside = { showPopup = false },
+            onAlarmChange = { newAlarm -> alarm = newAlarm },
+            viewModel,
+            navController,
+            alarm
         )
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .background(color = colorResource(id = R.color.background))
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(modifier = Modifier.fillMaxWidth(),
+                colors = MainButtonColors(),
+                contentPadding = PaddingValues(
+                    vertical = 12.dp
+                ),
+                onClick = {
+                    alarm.time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0)
+
+                    viewModel.addAlarm(
+                        alarm
+                    )
+                    navController.navigate(Screens.Home.name)
+                }) { Text(text = "Add Alarm", fontSize = 14.sp) }
+
+        }
     }
 }
 
 
+// Here we display all barcodes from the barcode database and allow the user to select 1 for this specific alarm
+// Also the user can set new barcodes by navigating to the camera
+// This is still a problem since when we navigate back from the camera the UI State is reset and all changes to the alarm have to be redone
+// For Future progress this should be solved as its a bad feedback for the user
 @Composable
 fun AddBarcode(
     showPopup: Boolean,
@@ -510,12 +757,12 @@ fun AddBarcode(
 
 
     if (showPopup) {
-        // full screen background
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.6f))
-                .zIndex(10F),
+                .zIndex(10F)
+                .clip(RoundedCornerShape(50.dp)),
 
             contentAlignment = Alignment.Center
         ) {
@@ -532,15 +779,25 @@ fun AddBarcode(
                     Modifier
                         .fillMaxWidth(0.9f)
                         .fillMaxHeight(0.8f)
-                        .background(Color.Black)
-                        .clip(RoundedCornerShape(4.dp)),
+                        .background(color = colorResource(id = R.color.background))
+                        .clip(RoundedCornerShape(10.dp)),
                 ) {
 
-                    Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                        Button(onClick = { onClickOutside() }) { Text(text = "Cancel") }
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 8.dp)
+                    ) {
+                        Button(onClick = { onClickOutside() }) {
+                            Icon(
+                                imageVector = Icons.Filled.Clear,
+                                contentDescription = "Cancel"
+                            )
+                        }
                         Button(onClick = { navController.navigate("Camera/setBarcode") }) {
                             Text(
-                                text = "Set new Barcode"
+                                text = "Add new Barcode"
                             )
                         }
 
@@ -557,7 +814,12 @@ fun AddBarcode(
 
                             OutlinedCard(
                                 onClick = {
-                                   onAlarmChange(alarm.copy(barcode = barcode.barcode, barcodeName = barcode.name))
+                                    onAlarmChange(
+                                        alarm.copy(
+                                            barcode = barcode.barcode,
+                                            barcodeName = barcode.name
+                                        )
+                                    )
                                     onClickOutside()
 
                                 },
@@ -576,17 +838,21 @@ fun AddBarcode(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(text = barcode.name, fontSize = 24.sp)
-//                                    If we delete the Barcode then everything else linked with it might be broken
-//                                    Except if we never use the Barcodedb to actually confirm a barcode scanned its fine
                                     Button(
                                         contentPadding = PaddingValues(4.dp),
-                                        modifier = Modifier.defaultMinSize(minWidth = 6.dp, minHeight = 6.dp),
+                                        modifier = Modifier.defaultMinSize(
+                                            minWidth = 6.dp,
+                                            minHeight = 6.dp
+                                        ),
                                         onClick = {
 
                                             viewModel.deleteBarcode(barcode)
 
                                         }) {
-                                        Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete")
+                                        Icon(
+                                            imageVector = Icons.Filled.Delete,
+                                            contentDescription = "Delete"
+                                        )
                                     }
 
                                 }
@@ -601,6 +867,7 @@ fun AddBarcode(
     }
 }
 
+//Edit an Alarm - basically almost the same as adding a new Alarm
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Edit(
@@ -608,10 +875,10 @@ fun Edit(
     modifier: Modifier = Modifier,
     navController: NavController,
     viewModel: AlarmViewModel,
-    context: Context
-) {
+    context: Context,
+    alarmSoundArr: List<Int>
 
-//    On edit old alarm has to be unset if it was activated before yes i still did not do that yet ;))=(9080
+) {
 
     val state by viewModel.alarmUIState.collectAsStateWithLifecycle()
 
@@ -637,176 +904,269 @@ fun Edit(
         is24Hour = true,
     )
 
+    Box(Modifier.fillMaxSize()) {
 
-    Column(
-        modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(horizontalArrangement = Arrangement.SpaceBetween) {
-            Button(onClick = {
-                navController.navigate(Screens.Home.name)
-            }) { Text(text = "Cancel") }
-            Button(onClick = {
-                alarm.time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0)
 
-                viewModel.updateAlarm(
-                    alarm
-
-                )
-                navController.navigate(Screens.Home.name)
-            }) { Text(text = "Save") }
-        }
-        TimePicker(
-            state = timePickerState,
-        )
-        Box(
+        Column(
             modifier
-                .border(border = BorderStroke(2.dp, Color.Magenta))
-                .padding(4.dp)
                 .fillMaxWidth()
-                .clickable { dropDownExpanded = !dropDownExpanded }) {
-            Text(text = alarm.audioFile)
-
-            DropdownMenu(
-                expanded = dropDownExpanded,
-                onDismissRequest = { dropDownExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Classic Alarm") },
-                    onClick = {
-                        alarm.audioFile = context.getString(R.string.classic_alarm)
-                        dropDownExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Granular Alarm") },
-                    onClick = {
-                        alarm.audioFile = context.getString(R.string.granular_alarm)
-                        dropDownExpanded = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Pain Alarm") },
-                    onClick = {
-                        alarm.audioFile = context.getString(R.string.pain_alarm)
-                        dropDownExpanded = false
-                    }
-                )
-            }
-        }
-
-        Slider(
-            value = alarm.volume,
-            onValueChange = { volume ->
-                alarm = alarm.copy(volume = volume)
-            }
-        )
-
-
-
-        OutlinedCard(
-            onClick = { showPopup = true },
-            modifier = Modifier
-                .fillMaxWidth()
-//                .padding(8.dp)
-//                label = { Text("BarcodeTask")}
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 66.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                Button(colors = MainButtonColors(), onClick = {
+                    navController.navigate(Screens.Home.name)
+                }) {
+                    Icon(imageVector = Icons.Filled.Clear, contentDescription = "Cancel")
+                }
+            }
 
+            Spacer(Modifier.height(20.dp))
+            TimePicker(
+                state = timePickerState,
 
-            Row(
+                )
+
+            OutlinedCard(
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-
-            ) {
-
-                Column() {
-                    Text(text = "BarcodeTask")
-                    Spacer(Modifier.height(6.dp))
-                    Text(text = alarm.barcodeName, color= Color.Gray, fontSize = 14.sp)
+                    .clickable { dropDownExpanded = !dropDownExpanded }
+                    .padding(0.dp)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = alarm.audioFile)
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = "Dropdown",
+                        tint = colorResource(id = R.color.highlight)
+                    )
 
 
                 }
-                Switch(
-                    checked = alarm.barcodeTask,
-                    onCheckedChange = {
-                        if (alarm.barcodeName == "No Barcode Selected") {
-                            showPopup = true
-                        } else {
-                            alarm = alarm.copy(barcodeTask = !alarm.barcodeTask)
-                        }
+                DropdownMenu(
+                    modifier = Modifier.fillMaxWidth(),
+                    expanded = dropDownExpanded,
+                    onDismissRequest = { dropDownExpanded = false }
+                ) {
+                    alarmSoundArr.map { sound ->
+
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(id = sound)) },
+                            onClick = {
+                                alarm.audioFile = context.getString(sound)
+                                dropDownExpanded = false
+                            }
+                        )
 
 
                     }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp)
+            ) {
+                Text(
+                    text = "Alarm Volume",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 0.dp),
+                    fontSize = 14.sp
                 )
+                Slider(
+                    modifier = Modifier.padding(vertical = 0.dp),
+                    value = alarm.volume,
+                    onValueChange = { volume ->
+                        alarm = alarm.copy(volume = volume)
+                    }
+                )
+            }
+
+
+
+            OutlinedCard(
+                onClick = { showPopup = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+
+                    Column() {
+                        Text(text = "BarcodeTask")
+                        Spacer(Modifier.height(6.dp))
+                        Text(text = alarm.barcodeName, color = Color.Gray, fontSize = 14.sp)
+
+
+                    }
+                    Switch(
+                        checked = alarm.barcodeTask,
+                        onCheckedChange = {
+                            if (alarm.barcodeName == "No Barcode Selected") {
+                                showPopup = true
+                            } else {
+                                alarm = alarm.copy(barcodeTask = !alarm.barcodeTask)
+                            }
+
+
+                        }
+                    )
+
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedCard(
+                Modifier
+                    .fillMaxWidth()
+            ) {
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+
+                    Column() {
+                        Text(text = "Shake Task")
+
+                    }
+                    Switch(
+                        checked = alarm.shakeTask,
+                        onCheckedChange = {
+                            alarm = alarm.copy(shakeTask = !alarm.shakeTask)
+                        }
+                    )
+
+                }
 
             }
-        }
-        Spacer(Modifier.height(8.dp))
 
-        OutlinedCard(
+            Spacer(Modifier.height(16.dp))
+
+
+
+            OutlinedCard(
+                Modifier
+                    .fillMaxWidth()
+            ) {
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+
+                    Column() {
+                        Text(text = "Math Task")
+
+                    }
+                    Switch(
+                        checked = alarm.mathTask,
+                        onCheckedChange = {
+                            alarm = alarm.copy(mathTask = !alarm.mathTask)
+                        }
+                    )
+
+                }
+
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedCard(
+                Modifier
+                    .fillMaxWidth()
+            ) {
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+
+                    Column() {
+                        Text(text = "Memory Task")
+
+                    }
+                    Switch(
+                        checked = alarm.memoryTask,
+                        onCheckedChange = {
+                            alarm = alarm.copy(memoryTask = !alarm.memoryTask)
+                        }
+                    )
+
+                }
+
+            }
+
+
+        }
+
+        AddBarcode(
+            showPopup = showPopup,
+            onClickOutside = { showPopup = false },
+            onAlarmChange = { newAlarm -> alarm = newAlarm },
+            viewModel,
+            navController,
+            alarm
+        )
+
+        Row(
             Modifier
-                .padding(8.dp)
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .background(color = colorResource(id = R.color.background))
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center
         ) {
+            Button(modifier = Modifier.fillMaxWidth(),
+                colors = MainButtonColors(),
+                contentPadding = PaddingValues(
+                    vertical = 12.dp
+                ), // Custom inner padding
+                onClick = {
+                    alarm.time = LocalTime.of(timePickerState.hour, timePickerState.minute, 0)
 
-            Text(text = "Shake Task")
-            Switch(
-                checked = alarm.shakeTask,
-                onCheckedChange = {
-                    alarm = alarm.copy(shakeTask = !alarm.shakeTask)
-                }
-            )
+                    viewModel.updateAlarm(
+                        alarm
+
+                    )
+//                    If the alarm was activated initially we have to cancel the old alarm and re-set the edited one to make sure
+                    if(alarmState.activated){
+                        cancelAlarm(context, alarmState)
+                        scheduleExactAlarm(context, alarm)
+                    }
+                    navController.navigate(Screens.Home.name)
+                }) { Text(text = "Save", fontSize = 14.sp) }
+
         }
-
-
-
-
-        OutlinedCard(
-            modifier = Modifier
-                .padding(8.dp)
-        ) {
-
-            Text(text = "Math Task")
-            Switch(
-                checked = alarm.mathTask,
-                onCheckedChange = {
-                    alarm = alarm.copy(mathTask = !alarm.mathTask)
-                }
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedCard(
-            Modifier
-                .padding(8.dp)
-        ) {
-
-            Text(text = "Memory Task")
-            Switch(
-                checked = alarm.memoryTask,
-                onCheckedChange = {
-                    alarm = alarm.copy(memoryTask = !alarm.memoryTask)
-                }
-            )
-        }
-
-
     }
-
-    AddBarcode(
-        showPopup = showPopup,
-        onClickOutside = { showPopup = false },
-        onAlarmChange = {newAlarm -> alarm = newAlarm},
-        viewModel,
-        navController,
-        alarm
-    )
 
 
 }

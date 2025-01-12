@@ -9,7 +9,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import com.example.alarmbuddy.R
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -22,15 +25,6 @@ private val LightColorScheme = lightColorScheme(
     secondary = PurpleGrey40,
     tertiary = Pink40
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
 )
 
 @Composable
@@ -50,8 +44,17 @@ fun AlarmBuddyTheme(
         else -> LightColorScheme
     }
 
+//    Custom colorscheme just with some highlight and background colors in use
+    val customColorScheme = darkColorScheme(
+        primary = colorResource(id = R.color.highlight),
+        onPrimary = Color.White,
+
+        secondary = colorResource(id = R.color.secondary),
+        background = colorResource(id = R.color.background),
+    )
+
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = customColorScheme,
         typography = Typography,
         content = content
     )

@@ -12,14 +12,18 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+
+//I use the Alarm Viewmodel not only for the Alarms but also to manage the Barcode Dao,
+// as a second Viewmodel would be overkill for this project and more confusing than helpful
 class AlarmViewModel (private val repository: AlarmRepository, private val barcodeDao: BarcodeDao):ViewModel()
 {
 
-    val alarmUIState = repository.Alarms.stateIn(
+        val alarmUIState = repository.Alarms.map { alarmList -> alarmList.sortedBy { it.time } }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
         emptyList()
     )
+
 
 
     fun addAlarm(alarm : Alarm){
@@ -70,18 +74,6 @@ class AlarmViewModel (private val repository: AlarmRepository, private val barco
     fun deleteBarcode(barcode: Barcode) {
         viewModelScope.launch {
             barcodeDao.deleteBarcode(
-                BarcodeEntity(
-                    _id = barcode.id,
-                    name = barcode.name,
-                    barcode = barcode.barcode
-                )
-            )
-        }
-    }
-
-    fun updateBarcode(barcode: Barcode) {
-        viewModelScope.launch {
-            barcodeDao.updateBarcode(
                 BarcodeEntity(
                     _id = barcode.id,
                     name = barcode.name,

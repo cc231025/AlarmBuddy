@@ -3,4 +3,13 @@
     <string name="granular_alarm">Granular Alarm</string>
     <string name="pain_alarm">Pain Alarm</string>
     <string name="classic_alarm">Classic Alarm</string>
+
+    <string name="ambient_scifi">Ambient Scifi</string>
+    <string name="increasing_panic">Increasing Panic</string>
+    <string name="level_up">Level Up</string>
+
+    <string name="relaxing_piano">Relaxing Piano</string>
+    <string name="school_clock">School Clock</string>
+    <string name="sunny_morning">Sunny Morning</string>
+    <string name="synth_power">Synth Power</string>
 </resources>

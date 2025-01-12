@@ -9,11 +9,13 @@ import com.example.alarmbuddy.data.db.BarcodeDao
 import com.example.alarmbuddy.data.db.BarcodeDatabase
 import com.example.alarmbuddy.ui.AlarmViewModel
 
+
+//Initialize Daos/Repository for barcode/alarm database + Factory to access them in my composables
 class AlarmApplication : Application() {
 
 
     val barcodeDao by lazy {
-        BarcodeDatabase.getDatabase(this).BarcodeDao() // Example database for barcodes
+        BarcodeDatabase.getDatabase(this).BarcodeDao()
     }
 
     val alarmRepository by lazy {

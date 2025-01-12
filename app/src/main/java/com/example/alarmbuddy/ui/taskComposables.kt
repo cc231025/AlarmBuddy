@@ -1,5 +1,8 @@
 package com.example.alarmbuddy.ui
 
+import android.app.Activity
+import android.content.Context
+import android.content.pm.ActivityInfo
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -39,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,12 +53,21 @@ import com.example.alarmbuddy.R
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
+//Lock orientation for Shake task since it would reset the count
+@Composable
+fun LockOrientation() {
+    val context = LocalContext.current
+    val activity = context as? Activity
+    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+}
 
+// User is prompted to shake the phone 50 times to continue to the next screen
 @Composable
 fun ShakeTask(
     sensorManager: SensorManager,
-    onShakeComplete: () -> Unit
+    onShakeComplete: () -> Unit,
 ) {
+    LockOrientation()
     var count by remember { mutableStateOf(0f) }
     var barColor by remember { mutableStateOf(Color.Red) }
     val shakeThreshold = 12f // Adjust as needed
@@ -92,7 +105,6 @@ fun ShakeTask(
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-                // No-op
             }
         }
     }
@@ -117,7 +129,7 @@ fun ShakeTask(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(textAlign = TextAlign.Center, text = "Shake your Phone 20 Times to stop the Alarm!")
+        Text(textAlign = TextAlign.Center, text = "Shake your Phone 50 Times to stop the Alarm!")
         Spacer(Modifier.height(50.dp))
 
         LinearProgressIndicator(
@@ -149,7 +161,7 @@ fun calc(a: Int, b: Int, operator: String?): Int {
     return result
 }
 
-
+// Generate a problem and return it as a string + the result List 1-3 as ints + The actual correct result to validate the input
 val generateProblem: () -> Triple<String, Array<Int>, Int> = {
 
     val operators = HashMap<Int, String>()
@@ -157,17 +169,9 @@ val generateProblem: () -> Triple<String, Array<Int>, Int> = {
     operators[1] = "-"
     operators[2] = "*"
 
-//        2 operators
-//        1st +-* 2nd +-
-//        lambda functions to genrate answers
-
     val variables = arrayOf(Random.nextInt(1, 10), Random.nextInt(1, 20), Random.nextInt(1, 100))
     val operator1 = Random.nextInt(3)
     val operator2 = Random.nextInt(2)
-
-//        2 operators
-//        1st +-* 2nd +-
-//        lambda functions to genrate answers
 
     val problemString =
         "${variables[0]} ${operators[operator1]} ${variables[1]} ${operators[operator2]} ${variables[2]}"
@@ -186,12 +190,12 @@ val generateProblem: () -> Triple<String, Array<Int>, Int> = {
 
 }
 
-
+//Prompt the user to solve some math tasks with 3 different answering options to choose from
+//ALl tasks are always randomized in the format of (x */+/- y +/- z)
+//The most triyk part here was actually managing calculations and throwing them to the UI as strings while still checking for Ints
 @Composable
 fun MathTask(
     onMathComplete: () -> Unit,
-
-
     ) {
 
 
@@ -264,11 +268,12 @@ fun MathTask(
 data class MemoryTile(var identifier: Int) {
     var enabled: Boolean by mutableStateOf(false)
     var finished: Boolean by mutableStateOf(false)
-    var standardColor: Color = Color.Blue
 }
 
-
-
+// A Game of colorful memory
+// Comparing and displaying the tiles + randomization was pretty straightforward
+// But I had Issues with actually showing the User which tiles he clicked when he didn't click a match
+// Delay and LaunchedEffect was needed as well as a bunch of mutableStates to manage this correctly
 @Composable
 fun MemoryTask(
 
@@ -319,17 +324,10 @@ fun MemoryTask(
         }else{
             currentTile = tile
             delayRender = true
-//            tileArray[lastTileClicked].enabled = false
-//            tileArray[tile].enabled = false
-//            lastTileClicked = -1
+
         }
     }
 
-//    fun resetTiles(){
-//        tileArray[lastTileClicked].enabled = false
-//        tileArray[currentTile].enabled = false
-//        lastTileClicked = -1
-//    }
 
     LaunchedEffect(delayRender) {
         if(delayRender){
@@ -380,7 +378,7 @@ fun MemoryTask(
             }
         }
         Spacer(Modifier.height(30.dp))
-        Text(text = "Finish the Memory to stop the Alarm, you got this!", textAlign = TextAlign.Center)
+        Text(text = "Finish the Memory to stop the Alarm, you got this!", textAlign = TextAlign.Center, fontSize = 20.sp)
 
     }
 

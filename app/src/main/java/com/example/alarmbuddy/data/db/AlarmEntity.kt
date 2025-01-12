@@ -6,6 +6,9 @@ import androidx.room.PrimaryKey
 import com.example.alarmbuddy.data.Alarm
 import java.time.LocalTime
 
+//Here we define the attributes of my Alarm Entity with integrate conversion function to Alarm class
+
+
 @Entity(tableName = "Alarms") // Specify table name
 data class AlarmEntity(
     @PrimaryKey(autoGenerate = true)

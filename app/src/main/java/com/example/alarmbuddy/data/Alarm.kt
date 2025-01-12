@@ -5,6 +5,9 @@ import com.example.alarmbuddy.data.db.AlarmEntity
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+
+//Here we define the attributes of my Alarm class with integrate conversion function to Entity
+
 data class Alarm (
     val id: Int = 0,
     val name: String = "Classic_Alarm",

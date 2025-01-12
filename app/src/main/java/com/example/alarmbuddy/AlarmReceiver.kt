@@ -16,7 +16,11 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.example.alarmbuddy.ui.getAudioResource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 //My beautiful AlarmReceiver - this is where the magic happens
@@ -63,11 +67,39 @@ class AlarmReceiver : BroadcastReceiver() {
 }
 
 
+val alarmSounds = mapOf(
+    "Classic Alarm" to R.raw.level_up,
+    "Pain Alarm" to R.raw.pain_alarm,
+    "Granular Alarm" to R.raw.granular_alarm,
+    "Ambient Scifi" to R.raw.ambient_scifi,
+    "Increasing Panic" to R.raw.increasing_panic,
+    "Level Up" to R.raw.level_up,
+    "Relaxing Piano" to R.raw.relaxing_piano,
+    "School Clock" to R.raw.school_clock,
+    "Sunny Morning" to R.raw.sunny_morning,
+    "Synth Power" to R.raw.synth_power
+
+)
+
+fun getAudioResource(audioFileName: String): Int? {
+    return alarmSounds[audioFileName]
+}
+
+
 //The AlarmService is a foreground service that manages the alarm sound and notification
+//Ensures the alarm rings persistently even if app is closed
 class AlarmService : Service() {
 
     private var volumeChangeReceiver: BroadcastReceiver? = null
+
     private var mediaPlayer: MediaPlayer? = null
+
+//    Coroutinescope needed to handle timing out the alarm for 10 seconds
+    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+
+    companion object {
+        const val ACTION_PAUSE_RESUME = "com.example.myapp.ACTION_PAUSE_RESUME"
+    }
 
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -84,13 +116,19 @@ class AlarmService : Service() {
             return START_NOT_STICKY
         }
 
+//      If Intent has this action timeout the alarm for 10 seconds
+        if (intent?.action == ACTION_PAUSE_RESUME ) {
+
+            pauseAndResumeAfterDelay()
+            return START_NOT_STICKY
+        }
+
         val audioFile = intent?.getStringExtra("audioFile") ?: "Classic Alarm"
         val alarmVolume = intent?.getFloatExtra("volume", 1.0f)
-        val alarmId = intent?.getIntExtra("id", -1)  // -1 is the default value if "id" is not found
-        val navigateTo = intent?.getStringExtra("navigateTo") ?: "Ringing"
+
 
 //      Start Notification
-        showNotification(alarmId, navigateTo)
+        showNotification()
 
         // Start alarm playback
         startAlarm(audioFile, alarmVolume)
@@ -106,7 +144,6 @@ class AlarmService : Service() {
     //    This extra receiver checks if the user tries to change the alarm volume and resets it to max - max annoyance level achieved
     private fun registerVolumeChangeReceiver() {
 
-//      Manage the whole audio of the system on the STREAM_ALARM channel
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         audioManager.mode = AudioManager.MODE_NORMAL
 
@@ -134,8 +171,8 @@ class AlarmService : Service() {
         registerReceiver(volumeChangeReceiver, filter)
     }
 
-
-    private fun showNotification(alarmId: Int?, navigateTo: String) {
+// Send a notification when the Alarm Rings
+    private fun showNotification() {
 
         val channelId = "alarm_channel"
 
@@ -174,15 +211,16 @@ class AlarmService : Service() {
 
     }
 
-    //    make sure to stop the alarm on destroy and disconnect the volumechangereceiver
+    //    make sure to stop the alarm on destroy, disconnect the volumechangereceiver and cancel the coroutines
     override fun onDestroy() {
         super.onDestroy()
         stopAlarm()
+        coroutineScope.cancel()
         volumeChangeReceiver?.let { unregisterReceiver(it) }
 
     }
 
-
+//  Start the Alarm sound, soundbite is looped until the alarm is disabled
     private fun startAlarm(audioFile: String, volume: Float?) {
         val audioFileRes = getAudioResource(audioFile)
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -219,10 +257,26 @@ class AlarmService : Service() {
 
     }
 
-//    Release the alarm and reset mediaplyer to make sure
+//  Pause the Alarm for 10 seconds to not wake your spouse, or not go insane
+//    Coroutines used for this process
+    private fun pauseAndResumeAfterDelay() {
+        mediaPlayer?.let { player ->
+            if (player.isPlaying) {
+                player.pause()
+                coroutineScope.launch {
+                    delay(10000)
+                    player.start()
+                }
+            }
+        }
+    }
+
+    //    Release the alarm and reset the media player to ensure proper cancellation
     private fun stopAlarm() {
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
     }
+
+
 }

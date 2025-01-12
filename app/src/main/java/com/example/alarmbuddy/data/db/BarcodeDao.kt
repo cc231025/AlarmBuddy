@@ -13,9 +13,6 @@ interface BarcodeDao {
     @Insert
     suspend fun addBarcode(barcodeEntity: BarcodeEntity)
 
-    @Update
-    suspend fun updateBarcode(barcodeEntity: BarcodeEntity)
-
     @Delete
     suspend fun deleteBarcode(barcodeEntity: BarcodeEntity)
 

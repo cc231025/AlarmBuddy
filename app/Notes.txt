@@ -1,50 +1,22 @@
-Permision for notifications and general alarm usage should be integrated on first start of the app, doesnt ask at all for now
-Include it when using the camera for barcode scanner since permission will be needed there as well
+Features Missing:
+Snooze  ------------------------------------------------------
+Edit Screen to add screen --------
+
+Smaller ToDos:
+Overall UI - colors, fonts ... -----------------------
+UI for all tasks -------------
+UI for permiussionLauncher ----------
+Add more Alarmssounds ---------------
+Refactor ----------------
+After alarm Complete navigate to Home -----
+Check and Redo the animations
+Uhrzeit richtig darstellen ------
+Liste nach Uhrzeit Ordnen ----------
 
 
-
-####################################### Overlay Permission activated works
-also overlay permission prompt: fun requestOverlayPermission(context: Context) {
-                                    if (!Settings.canDrawOverlays(context)) {
-                                        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                            data = Uri.parse("package:${context.packageName}")
-                                        }
-                                        context.startActivity(intent)
-                                    }
-                                }
-
-
-
-and battery optimization prompt:
-
-@RequiresApi(Build.VERSION_CODES.M)
-fun requestBatteryOptimizationExclusion(context: Context) {
-    val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-    val packageName = context.packageName
-
-    if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
-        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-            data = Uri.parse("package:$packageName")
-        }
-        context.startActivity(intent)
-    }
-}
-
-
-## On Edit check if the alarm is allready set - if it is we have to clear it and reset it to avoid conflicts
-
-
-Ok when alarm was triggered go in the db and change activated to false,
-
-
-Change: Alarm time if under 10 it will show like 15:1
-Also Order the Alarms by time
-
-
-Since we use Foreground now to initiate and stop the alarms - we can maybe notice if the app is closed while the task is still running - just set a new timer to fuckwith it
-
-
-
-Problem Now: Alarm works fine also ringing if closed and so on
-Problem Intent gets passed to mainactivity when opened over notification click, but only the first time when opened over launchintent or normal app opening
-Use SharedPreference  to pass this persistently how I want it maybe ...
+If enough Time:
+Add if barcodetask/mathtask activated to home list item ------------
+Rehaul the Edit/Add mutables for better performance
+Edit set barcode interaction instantly set it when new one is created and activate it
+Setting new barcode resets state of composable edit
+Clock Timepicker not ideal
