@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("com.google.devtools.ksp")
+    kotlin("plugin.serialization") version "1.9.0"
+
 
 }
 
@@ -54,6 +56,9 @@ android {
 }
 
 dependencies {
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0-RC")
+
 
 //    ShakeitUp
 //    implementation(libs.compose.multiplatform.shake.detection)
