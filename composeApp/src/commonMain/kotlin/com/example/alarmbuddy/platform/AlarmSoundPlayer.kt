@@ -8,5 +8,7 @@ package com.example.alarmbuddy.platform
 // covered in MIGRATION_PLAN.md (Critical Alerts entitlement).
 expect class AlarmSoundPlayer() {
     fun play(soundFileName: String, volume: Float)
+    fun pause()
+    fun resume()
     fun stop()
 }

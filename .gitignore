@@ -13,3 +13,16 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Kotlin/Compose Multiplatform
+.kotlin
+**/build/
+
+# XcodeGen generates the real Xcode project from iosApp/project.yml at build
+# time (see .github/workflows/ios-build.yml) -- don't commit the generated
+# artifacts.
+iosApp/iosApp.xcodeproj/
+iosApp/*.xcworkspace/
+iosApp/Payload/
+iosApp/*.ipa
+

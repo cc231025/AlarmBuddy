@@ -1,0 +1,41 @@
+# XcodeGen spec (https://github.com/yonaskolb/XcodeGen). We check this
+# human-editable YAML into git instead of a hand-authored .xcodeproj -- CI
+# runs `xcodegen generate` to produce the real .xcodeproj right before
+# building. This is far less error-prone than hand-writing pbxproj by hand
+# (which is what a fully offline port like this one would otherwise require),
+# at the cost of needing xcodegen installed (it's a one-line `brew install`
+# on the GitHub macOS runner, see .github/workflows/ios-build.yml).
+name: iosApp
+options:
+  bundleIdPrefix: com.example.alarmbuddy
+  deploymentTarget:
+    iOS: "16.0"
+
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: iosApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.alarmbuddy
+        INFOPLIST_FILE: iosApp/Info.plist
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "1"
+        ENABLE_BITCODE: NO
+        # Where `./gradlew :composeApp:embedAndSignAppleFrameworkForXcode` (run
+        # by the CI script, mirroring what Xcode's own KMP-plugin build phase
+        # does) drops the built ComposeApp.framework.
+        FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../composeApp/build/xcode-frameworks/**"
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
+    preBuildScripts:
+      # This one script both builds the Kotlin/Native framework AND embeds +
+      # signs it into the app bundle -- the same thing the JetBrains KMP
+      # wizard's default Xcode template wires up, just expressed through
+      # XcodeGen instead of a hand-edited pbxproj Run Script phase.
+      - name: Build and embed Kotlin/Native framework (ComposeApp)
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
+        basedOnDependencyAnalysis: false

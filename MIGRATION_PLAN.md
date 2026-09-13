@@ -98,8 +98,50 @@ iosApp/
 
 ## Distribution note
 
-This branch produces a plain `.ipa` via CI (see `.github/workflows/ios-build.yml`).
-Getting that file onto a physical iPhone without an Apple Developer Program
-membership requires the installing device to sideload it via AltStore/AltServer
-or SideStore (free, but needs a computer at least once on the installing
-side) — see the conversation history for the full breakdown of options.
+This branch produces a **deliberately unsigned** `.ipa` via CI (see
+`.github/workflows/ios-build.yml`) — no Apple Developer account or signing
+secrets are configured, and that's intentional, not an oversight. AltStore,
+AltServer, and SideStore all re-sign an app themselves using the *installing*
+user's own free Apple ID, so an unsigned `.ipa` is exactly the input they
+expect. Getting that file onto a physical iPhone still requires a computer
+somewhere in the process on the installing side (AltServer running on any
+Mac/Windows/Linux machine, or a one-time SideStore bootstrap) — see the
+conversation history for the full breakdown of why a fully phone-only,
+zero-computer path requires paying for Apple's Developer Program and using
+TestFlight instead.
+
+## The Xcode project is generated, not hand-committed
+
+`iosApp/` contains a `project.yml` (an [XcodeGen](https://github.com/yonaskolb/XcodeGen)
+spec) instead of a checked-in `.xcodeproj`. Hand-editing Xcode's binary/plist
+`.pbxproj` format correctly, from a Linux sandbox with no Xcode available to
+verify it, is exactly the kind of thing that silently produces a broken
+project — a readable YAML spec that CI regenerates into a real Xcode project
+right before every build is a lot more robust. Locally on a Mac: `brew
+install xcodegen && cd iosApp && xcodegen generate` produces `iosApp.xcodeproj`
+before opening it in Xcode.
+
+## A note on how this was built, and what's still unverified
+
+This port was written in a Linux sandbox with no macOS/Xcode available, and
+(separately) no network access to Maven Central / the Gradle plugin portal
+either, which means **none of this has been compiled, not even the shared
+Kotlin/Compose code on a desktop JVM target**. The `composeApp` module
+includes a `jvm` target specifically so that once this reaches an environment
+with normal network access, running `./gradlew :composeApp:run` gives a fast,
+Xcode-free way to smoke-test the shared UI/business logic layer (data models,
+ViewModel, navigation, all the Compose screens) before ever touching the iOS
+side.
+
+The highest-risk, least-verified code is the iOS-specific Kotlin/Native
+interop in `composeApp/src/iosMain/kotlin/.../platform/`
+(`AlarmScheduler.ios.kt`, `Accelerometer.ios.kt`, `AlarmSoundPlayer.ios.kt`,
+`BarcodeScannerView.ios.kt`, `NotificationDelegate.ios.kt`) and the Swift
+glue in `iosApp/iosApp/ComposeView.swift`. These follow well-established
+patterns from the Kotlin Multiplatform/Compose Multiplatform ecosystem, but
+were written without a compiler to check them against. Treat the first
+`.github/workflows/ios-build.yml` run as the real first compile of this
+branch, and expect it to take a couple of rounds of reading CI logs and
+fixing small interop mistakes (wrong parameter label, wrong import, etc.)
+before it goes green — that's normal for a port of this size done this way,
+not a sign something is fundamentally wrong with the approach.

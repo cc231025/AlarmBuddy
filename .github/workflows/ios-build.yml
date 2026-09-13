@@ -1,0 +1,110 @@
+name: iOS build
+
+# Builds the app on GitHub's hosted macOS runner (a real Mac in the cloud),
+# so nobody needs to own a Mac or install Xcode locally. See MIGRATION_PLAN.md.
+#
+# No Apple Developer account / signing secrets are configured here on purpose:
+# the "build-device-ipa" job produces a deliberately UNSIGNED .ipa. That's not
+# a shortcut -- it's the correct input for AltStore/AltServer/SideStore, which
+# re-sign the app themselves using the installing user's own free Apple ID
+# when sideloading. If you later get a paid Apple Developer Program account
+# and want TestFlight instead, this workflow would need signing
+# certificate/provisioning-profile secrets added -- ask for that when you're
+# ready rather than assuming it's already wired up.
+
+on:
+  push:
+    branches: [ios-port, main]
+  pull_request:
+    branches: [ios-port, main]
+  workflow_dispatch: {}
+
+jobs:
+  build-simulator:
+    name: Build (iOS Simulator, fast sanity check)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: iosApp
+        run: xcodegen generate
+
+      - name: Build for iOS Simulator
+        working-directory: iosApp
+        run: |
+          xcodebuild \
+            -project iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            clean build
+
+  build-device-ipa:
+    name: Build unsigned .ipa (for AltStore/SideStore sideloading)
+    needs: build-simulator
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: iosApp
+        run: xcodegen generate
+
+      - name: Build unsigned .app for a real device
+        working-directory: iosApp
+        run: |
+          xcodebuild \
+            -project iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            DEVELOPMENT_TEAM="" \
+            clean build
+
+      - name: Package .ipa
+        working-directory: iosApp
+        run: |
+          set -e
+          APP_PATH="build/Build/Products/Release-iphoneos/iosApp.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Expected app bundle not found at $APP_PATH" >&2
+            find build/Build/Products -maxdepth 3 >&2 || true
+            exit 1
+          fi
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/AlarmBuddy.app
+          zip -r AlarmBuddy-unsigned.ipa Payload
+
+      - name: Upload .ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlarmBuddy-unsigned-ipa
+          path: iosApp/AlarmBuddy-unsigned.ipa
+          retention-days: 14
