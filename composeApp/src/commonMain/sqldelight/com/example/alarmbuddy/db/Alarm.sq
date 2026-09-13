@@ -1,0 +1,38 @@
+CREATE TABLE AlarmEntity (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    hour INTEGER NOT NULL,
+    minute INTEGER NOT NULL,
+    activated INTEGER AS Boolean NOT NULL DEFAULT 0,
+    barcode TEXT NOT NULL,
+    barcodeName TEXT NOT NULL,
+    barcodeTask INTEGER AS Boolean NOT NULL DEFAULT 0,
+    shakeTask INTEGER AS Boolean NOT NULL DEFAULT 0,
+    mathTask INTEGER AS Boolean NOT NULL DEFAULT 0,
+    memoryTask INTEGER AS Boolean NOT NULL DEFAULT 0,
+    audioFile TEXT NOT NULL,
+    volume REAL NOT NULL DEFAULT 0.5,
+    snoozes INTEGER NOT NULL DEFAULT 3,
+    snoozeTime INTEGER NOT NULL DEFAULT 300
+);
+
+selectAllAlarms:
+SELECT * FROM AlarmEntity ORDER BY hour, minute;
+
+selectAlarmById:
+SELECT * FROM AlarmEntity WHERE id = :id;
+
+insertAlarm:
+INSERT INTO AlarmEntity(name, hour, minute, activated, barcode, barcodeName, barcodeTask, shakeTask, mathTask, memoryTask, audioFile, volume, snoozes, snoozeTime)
+VALUES (:name, :hour, :minute, :activated, :barcode, :barcodeName, :barcodeTask, :shakeTask, :mathTask, :memoryTask, :audioFile, :volume, :snoozes, :snoozeTime);
+
+updateAlarm:
+UPDATE AlarmEntity
+SET name = :name, hour = :hour, minute = :minute, activated = :activated, barcode = :barcode,
+    barcodeName = :barcodeName, barcodeTask = :barcodeTask, shakeTask = :shakeTask,
+    mathTask = :mathTask, memoryTask = :memoryTask, audioFile = :audioFile, volume = :volume,
+    snoozes = :snoozes, snoozeTime = :snoozeTime
+WHERE id = :id;
+
+deleteAlarm:
+DELETE FROM AlarmEntity WHERE id = :id;

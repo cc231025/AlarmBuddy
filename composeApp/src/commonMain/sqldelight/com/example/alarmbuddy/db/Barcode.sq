@@ -1,0 +1,14 @@
+CREATE TABLE BarcodeEntity (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    barcode TEXT NOT NULL
+);
+
+selectAllBarcodes:
+SELECT * FROM BarcodeEntity;
+
+insertBarcode:
+INSERT INTO BarcodeEntity(name, barcode) VALUES (:name, :barcode);
+
+deleteBarcode:
+DELETE FROM BarcodeEntity WHERE id = :id;
