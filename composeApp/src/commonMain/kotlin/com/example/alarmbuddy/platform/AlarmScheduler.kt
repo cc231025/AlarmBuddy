@@ -16,4 +16,12 @@ import com.example.alarmbuddy.data.Alarm
 expect class AlarmScheduler {
     fun schedule(alarm: Alarm)
     fun cancel(alarm: Alarm)
+
+    // Called whenever the full alarm list changes (added/edited/toggled/
+    // deleted, and once on cold launch with whatever's in the database) so
+    // the iOS actual can keep its background "keep the process alive with a
+    // near-silent audio loop" trick (see BackgroundKeepAlive.ios.kt) pointed
+    // at whichever activated alarm is coming up next. A no-op on the desktop
+    // dev target, which has no such background-audio mechanism to maintain.
+    fun syncArmedAlarms(alarms: List<Alarm>)
 }

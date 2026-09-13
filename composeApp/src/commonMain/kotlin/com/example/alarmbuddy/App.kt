@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alarmbuddy.platform.AlarmNotificationRouter
 import com.example.alarmbuddy.ui.Add
@@ -40,7 +41,10 @@ fun App(appContainer: AppContainer) {
 
         // Cold-launched (or resumed) from a tapped alarm notification -> jump
         // straight to Ringing. Mirrors the original app's SharedPreferences
-        // "navigateTo"/"id" check in MainActivity.onCreate.
+        // "navigateTo"/"id" check in MainActivity.onCreate. This same signal
+        // is also how BackgroundKeepAlive (iOS-only) routes into Ringing when
+        // its own background timer -- not a notification tap -- is what
+        // actually fired the alarm.
         val pendingAlarmId by AlarmNotificationRouter.pendingAlarmId.collectAsState()
         LaunchedEffect(pendingAlarmId) {
             pendingAlarmId?.let { id ->
@@ -49,10 +53,21 @@ fun App(appContainer: AppContainer) {
             }
         }
 
+        // Keep the platform scheduler's idea of "what's the next armed alarm"
+        // in sync with the database -- on cold launch with whatever's already
+        // activated, and every time an alarm is added/edited/toggled/deleted.
+        // On iOS this is what BackgroundKeepAlive polls against; it's a no-op
+        // on the desktop dev target. See AlarmScheduler.kt / BackgroundKeepAlive.ios.kt.
+        val alarmList by viewModel.alarmUIState.collectAsStateWithLifecycle()
+        LaunchedEffect(alarmList) {
+            appContainer.alarmScheduler.syncArmedAlarms(alarmList)
+        }
+
         when (val current = screen) {
             is Screen.Home -> Home(
                 viewModel = viewModel,
                 alarmScheduler = appContainer.alarmScheduler,
+                appContainer = appContainer,
                 onAddAlarm = { screen = Screen.Add },
                 onEditAlarm = { id -> screen = Screen.Edit(id) },
             )

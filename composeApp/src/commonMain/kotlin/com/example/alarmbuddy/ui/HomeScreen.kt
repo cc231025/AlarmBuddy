@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.alarmbuddy.AppContainer
 import com.example.alarmbuddy.data.Alarm
 import com.example.alarmbuddy.platform.AlarmScheduler
 import com.example.alarmbuddy.ui.theme.SecondaryColor
@@ -49,6 +50,7 @@ import alarmbuddy.composeapp.generated.resources.shake
 fun Home(
     viewModel: AlarmViewModel,
     alarmScheduler: AlarmScheduler,
+    appContainer: AppContainer,
     onAddAlarm: () -> Unit,
     onEditAlarm: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -56,6 +58,8 @@ fun Home(
     val state by viewModel.alarmUIState.collectAsStateWithLifecycle()
 
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        GuidedAccessReminder(alarms = state, appContainer = appContainer)
+
         Button(onClick = onAddAlarm) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Alarm")
         }

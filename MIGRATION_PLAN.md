@@ -147,93 +147,138 @@ Expected to hold up (these are what iOS actually lets an app guarantee):
   Ringing/task-gate screen, not a normal Home screen where you could just
   ignore it. (This is what the `navigateTo`/`ringingAlarmId` persistence in
   AppSettings is for.)
+- Arm an alarm, background the app (press Home, don't force-quit), and wait:
+  you should hear nothing until the alarm's actual minute, at which point the
+  phone should start ringing *on its own*, before you touch it -- that's
+  `BackgroundKeepAlive`'s quiet-loop-then-ramp-up mechanism, independent of
+  the notification burst. Reopening the app at that point should land
+  straight on Ringing.
+- With no alarm armed, or with Guided Access already on, the Home screen's
+  "Guided Access is off" reminder card should not appear. Turn Guided Access
+  on (triple-click the side button) while an armed alarm is showing the
+  reminder: the card should disappear within a few seconds (it's polled, not
+  pushed -- iOS has no change notification for this).
 
 Expected NOT to hold up -- these are real, permanent gaps versus the Android
-version, not bugs to chase:
+version, not bugs to chase, unless Guided Access is active (see the
+"zero-cost ways to claw back" section above for what Guided Access changes):
 - The hardware volume-down buttons *can* lower the Ringing screen's sound,
-  including to zero. Android's AudioManager let the app force the stream
-  back to max; iOS gives no app that power over the physical volume level.
+  including to zero, unless Guided Access is active and hardware-button time
+  limits are turned on. Android's AudioManager let the app force the stream
+  back to max unconditionally; iOS gives no app that power over the physical
+  volume level on its own.
 - Turning on Do Not Disturb/a Focus mode, or leaving Silent Mode on, *before*
-  the notification burst fires will silence it. Getting the notification
-  sound itself to ignore Silent Mode/Focus requires Apple's Critical Alerts
-  entitlement (a manual request tied to a paid Developer account) -- not
-  implemented here.
-- Force-quitting the app always stops the sound outright, full stop. No
-  third-party app on iOS can prevent a force-quit or survive it with audio
-  still playing.
+  the notification burst fires will silence that burst specifically (the
+  background-audio keep-alive's own playback still ignores the mute switch
+  via `.playback`, but a Focus mode can still suspend/limit background audio
+  depending on its settings). Getting the notification sound itself to
+  ignore Silent Mode/Focus requires Apple's Critical Alerts entitlement (a
+  manual request tied to a paid Developer account) -- not implemented here.
+- A genuine force-quit always stops the sound outright, full stop, unless
+  Guided Access is active (which makes the force-quit gesture unreachable).
+  No third-party app on iOS can prevent or survive a force-quit on its own.
 - Revoking notification permission (Settings -> AlarmBuddy -> Notifications)
-  means no burst fires at all when the alarm's due. There's no fallback path
-  for this in the current design.
+  means no burst fires at all when the alarm's due; the background-audio
+  keep-alive doesn't depend on that permission, but does depend on the app
+  having been backgrounded (not force-quit or never opened) since the alarm
+  was armed.
 
 ## Zero-cost ways to claw back "can't be silenced" (no Developer Program, no Apple approval)
 
 The Critical Alerts entitlement described above is off the table by choice —
 it needs a paid Apple Developer Program account and a manual Apple approval.
 Here's what's actually achievable with nothing but a free Apple ID and
-settings that already exist on every iPhone:
+settings that already exist on every iPhone. Both of the following are now
+**implemented in this branch**, not just proposed:
 
-1. **Guided Access (Settings -> Accessibility -> Guided Access).** This is
-   the single best lever available and it's completely free and built into
-   iOS. Once turned on, the user triple-clicks the side button *after*
-   opening AlarmBuddy to start a Guided Access session with a passcode (or
-   Face ID). While it's active:
-   - The physical volume buttons can be disabled entirely (Guided Access has
-     an option to ignore hardware button presses), which directly restores
-     the "can't just turn it down" property that `WRITE_SETTINGS` gave the
-     Android version.
-   - The user cannot leave the app -- no app-switcher, no Home button/swipe,
-     no Control Center -- without entering the Guided Access passcode. That's
-     a *stronger* lock-in than the Android original ever had.
-   - It does not, by itself, stop a *force-quit*, because you can't
-     force-quit an app you can't leave in the first place -- the app-switcher
-     gesture that would normally do that is exactly what Guided Access is
-     blocking. So this is the piece that actually closes the "reopen and
-     just ignore the ringing screen" gap, not a partial mitigation.
-   - The catch: it's opt-in and manual every single time (triple-click after
-     opening the app, each night), and if the person quits the *habit* of
-     turning it on, none of this applies that night. It also can't be turned
-     on *for* someone else remotely -- whoever is setting the alarm has to
-     enable it on their own device. Worth documenting clearly in the app's
-     own UI/onboarding rather than assuming the user will find Guided Access
-     on their own.
+1. **Guided Access (Settings -> Accessibility -> Guided Access)**, surfaced
+   in-app via `ui/GuidedAccessReminder.kt` and `platform/GuidedAccess.kt` /
+   `GuidedAccess.ios.kt`. This is the single best lever available, and it's
+   completely free and built into iOS. There is no public API for a
+   third-party app to *turn on* Guided Access -- that would defeat the point
+   of it being a deliberate, physical action -- but `UIAccessibilityIsGuidedAccessEnabled()`
+   is a public, documented API for *checking* whether it's currently active,
+   which is enough to build real enforcement pressure around:
+   - The first time someone arms an alarm, a one-time dialog walks them
+     through the actual one-time setup: turning on the Accessibility
+     Shortcut for Guided Access (Settings -> Accessibility -> Accessibility
+     Shortcut -> check Guided Access) so that, from then on, turning Guided
+     Access on each night is a single triple-click of the side button, not a
+     menu dive. That's the "can this be a one-time setting" question
+     answered as honestly as iOS allows: the *setup* is one-time; the
+     nightly *activation* is a low-friction physical gesture that Apple
+     deliberately keeps manual, forever, for any app.
+   - Whenever an alarm is armed and Guided Access is currently off, the Home
+     screen shows a standing reminder card (polled every few seconds, since
+     iOS gives no change notification for this, only a point-in-time check).
+   - Once active, Guided Access can disable the physical volume buttons
+     entirely and blocks leaving the app (no app-switcher, no Home
+     button/swipe, no Control Center) without the Guided Access passcode --
+     stronger lock-in than the Android original ever had, and it's also what
+     makes a force-quit unreachable in the first place (see below).
+   - The reminder can nag; it cannot enforce. If the habit lapses on a given
+     night, none of this applies that night, and it can only be turned on by
+     whoever's phone it is -- there's no way to enable it remotely or on
+     someone else's behalf.
 
-2. **A continuous-background-audio redesign, instead of (or alongside) the
-   notification burst.** Right now the alarm sound only starts once the user
-   taps a notification and the app is foregrounded. A more robust design:
-   schedule one `UNTimeIntervalNotificationTrigger` for the alarm time whose
-   handling, on delivery while the app is still running in the background,
-   kicks off `AVAudioPlayer` playback under the `audio` UIBackgroundMode
-   *before* the user does anything. Combined with an `AVAudioSession`
-   category of `.playback`, once that audio is actively playing, iOS treats
-   the process as a legitimate background-audio app and won't suspend it --
-   which means the sound keeps looping even if the user backgrounds the app
-   (presses Home) without force-quitting. This is free, requires no
-   entitlement, and is exactly how the free tier of apps like Alarmy stays
-   loud without Critical Alerts. It doesn't require the user to remember to
-   do anything (unlike Guided Access), so it's worth building regardless of
-   whether Guided Access is also used. Practical caveat: iOS can still kill
-   a background app under memory pressure or after extended background
-   audio in some edge cases, and this still doesn't survive an actual
-   force-quit -- nothing does. This has not been implemented in this branch
-   yet; today's version relies solely on the notification burst.
+2. **A continuous-background-audio keep-alive**, implemented in
+   `platform/BackgroundKeepAlive.ios.kt` and wired up via
+   `AlarmScheduler.syncArmedAlarms()` (called from `App.kt` every time the
+   alarm list changes) and `Info.plist`'s `UIBackgroundModes: audio`. Instead
+   of only starting the alarm sound once a notification is tapped, the app
+   now starts looping the alarm's own sound at near-zero volume the moment
+   it's backgrounded (Home button/swipe) while an alarm is armed. A real,
+   continuously-playing `AVAudioPlayer` is what iOS accepts as a reason not
+   to suspend the process (true silence or a paused player doesn't count).
+   While that loop runs, a repeating timer compares wall-clock time against
+   the armed alarm's target time; the moment they match, it jumps that same
+   player's volume up to the alarm's real configured volume and marks the
+   alarm as pending (the same `AlarmNotificationRouter` signal a tapped
+   notification uses) -- so the phone can start actually ringing on its own,
+   before the user even touches it, and reopening the app (from the Home
+   Screen icon or a notification, whichever comes first) drops straight into
+   Ringing. This is free, needs no entitlement, and is the same trick real
+   free-tier iOS alarm apps use. It complements, not replaces, the
+   notification burst: if the process dies anyway (force-quit, memory
+   pressure, a reboot), the independently OS-scheduled notifications are
+   still the fallback.
 
-3. **What genuinely cannot be fixed for free, and isn't a code problem:** a
-   deliberate force-quit (swipe-up-and-away in the app switcher) by someone
-   who is not in a Guided Access session always and immediately kills the
-   process and its audio, on every iOS app, with or without Apple's
-   cooperation. The Android version could resist this because
-   `AlarmService` ran as a privileged foreground service the OS protects;
-   iOS grants no third-party app that protection at any price, paid or
-   free -- Critical Alerts changes what an *already-delivered notification*
-   sounds like, it does not stop the user from quitting the app. The
-   combination of (1) and (2) above gets AlarmBuddy about as close to the
-   original Android guarantee as is possible on iOS without Apple's
-   cooperation: Guided Access removes the "leave the app" and "turn down the
-   volume" escape hatches, and background audio removes the "just background
-   it and it goes quiet" escape hatch. Only a deliberate, informed
-   force-quit by someone who knows the Guided Access passcode remains
-   possible, and that's true of literally every alarm app on the App Store
-   that isn't using Critical Alerts, including the well-known paid ones.
+3. **What "force-quit" means, and what genuinely cannot be fixed for free.**
+   Force-quitting an app means opening the App Switcher (swipe up and hold,
+   or double-click Home on older iPhones) and swiping that app's card away.
+   That's different from simply pressing Home to background the app --
+   backgrounding alone only *suspends* the process (which is exactly what
+   the background-audio keep-alive above is designed to prevent), while a
+   force-quit unconditionally *terminates* it. SpringBoard (the OS's own
+   home-screen process), not AlarmBuddy, does the killing, entirely outside
+   any third-party app's process or control -- there is no API, entitlement,
+   or private hack that lets an app intercept, delay, or veto that gesture,
+   at any price. (A tiny handful of Apple's own system categories -- an
+   active Phone/CallKit call, a live turn-by-turn navigation session with
+   background location -- get OS-level exemptions from this; no
+   general-purpose third-party app can opt into that behavior.) So "deny the
+   quit" isn't available as a feature to build; "keep the alarm going so
+   reopening the app is required to shut it off" is exactly what's already
+   built, via a different mechanism: the notification burst keeps firing
+   independently (it was scheduled with the OS up front, not by the now-dead
+   process), and `RingingScreen.kt`/`MainViewController.kt`/`main.kt`'s
+   `navigateTo`/`ringingAlarmId` persistence means reopening the app --
+   whether from a notification tap or the Home Screen icon -- always lands
+   back on the Ringing/task-gate screen, never a normal Home screen where the
+   alarm could just be ignored. The only thing a force-quit still
+   *immediately* stops is the sound itself, which is unavoidable on iOS.
+   Guided Access (above) is the one lever that closes even that gap, by
+   making the force-quit gesture unreachable in the first place -- which is
+   why it's presented as a recommended habit, not just a reminder banner.
+
+Put together: Guided Access removes the "leave the app" and "turn down the
+volume" escape hatches; the background-audio keep-alive removes the "just
+background it and it goes quiet" escape hatch; the ringing-state persistence
+removes the "reopen and land on a normal Home screen" escape hatch. What's
+left standing is a *deliberate*, informed force-quit by someone who is not in
+a Guided Access session -- and that's true of literally every alarm app on
+the App Store that isn't using Apple's Critical Alerts, including the
+well-known paid ones.
 
 ## A note on how this was built, and what's still unverified
 

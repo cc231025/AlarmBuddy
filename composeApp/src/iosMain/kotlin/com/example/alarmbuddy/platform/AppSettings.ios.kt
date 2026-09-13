@@ -19,6 +19,19 @@ actual class AppSettings actual constructor() {
         defaults.setInteger(value.toLong(), forKey = key)
     }
 
+    actual fun getBoolean(key: String): Boolean = defaults.boolForKey(key)
+
+    actual fun putBoolean(key: String, value: Boolean) {
+        defaults.setBool(value, forKey = key)
+    }
+
+    actual fun getFloat(key: String): Float? =
+        if (defaults.objectForKey(key) != null) defaults.floatForKey(key) else null
+
+    actual fun putFloat(key: String, value: Float) {
+        defaults.setFloat(value, forKey = key)
+    }
+
     actual fun clear(key: String) {
         defaults.removeObjectForKey(key)
     }

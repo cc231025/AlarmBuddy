@@ -20,6 +20,19 @@ actual class AppSettings actual constructor() {
         prefs.putInt(key, value)
     }
 
+    actual fun getBoolean(key: String): Boolean = prefs.getBoolean(key, false)
+
+    actual fun putBoolean(key: String, value: Boolean) {
+        prefs.putBoolean(key, value)
+    }
+
+    actual fun getFloat(key: String): Float? =
+        if (prefs.get(key, null) != null) prefs.getFloat(key, 0f) else null
+
+    actual fun putFloat(key: String, value: Float) {
+        prefs.putFloat(key, value)
+    }
+
     actual fun clear(key: String) {
         prefs.remove(key)
     }

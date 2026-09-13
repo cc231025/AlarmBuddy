@@ -17,10 +17,14 @@
     <key>NSCameraUsageDescription</key>
     <string>AlarmBuddy uses the camera to scan a barcode you set as a way to stop your alarm.</string>
 
-    <!-- Lets an alarm that's already ringing keep playing its sound if the app
-         is briefly backgrounded (e.g. the user glances at another app while
-         doing the barcode/shake task). See MIGRATION_PLAN.md for what this
-         can and can't do compared to Android's foreground service. -->
+    <!-- Two uses: (1) lets an alarm that's already ringing keep playing its
+         sound if the app is briefly backgrounded (e.g. the user glances at
+         another app while doing the barcode/shake task), and (2) is what
+         allows BackgroundKeepAlive.ios.kt's near-silent looping playback to
+         keep the process alive overnight instead of getting suspended, so it
+         can start ringing on its own at the target time instead of waiting
+         for a notification tap. See MIGRATION_PLAN.md for what this can and
+         can't do compared to Android's foreground service. -->
     <key>UIBackgroundModes</key>
     <array>
         <string>audio</string>

@@ -77,6 +77,13 @@ actual class AlarmScheduler {
         center.removeDeliveredNotificationsWithIdentifiers(identifiers)
     }
 
+    actual fun syncArmedAlarms(alarms: List<Alarm>) {
+        val next = alarms
+            .filter { it.activated }
+            .minByOrNull { secondsUntilNext(it.hour, it.minute) }
+        BackgroundKeepAlive.setNextArmedAlarm(next)
+    }
+
     private fun identifierFor(alarmId: Long, index: Int) = "alarm-$alarmId-$index"
 
     private fun secondsUntilNext(hour: Int, minute: Int): Double {

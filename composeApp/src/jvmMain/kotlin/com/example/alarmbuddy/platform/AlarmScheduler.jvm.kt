@@ -14,4 +14,8 @@ actual class AlarmScheduler {
     actual fun cancel(alarm: Alarm) {
         println("[desktop stub] would cancel alarm ${alarm.id}")
     }
+
+    actual fun syncArmedAlarms(alarms: List<Alarm>) {
+        // No background-audio keep-alive concept on the desktop dev target.
+    }
 }
