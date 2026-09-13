@@ -103,12 +103,35 @@ This branch produces a **deliberately unsigned** `.ipa` via CI (see
 secrets are configured, and that's intentional, not an oversight. AltStore,
 AltServer, and SideStore all re-sign an app themselves using the *installing*
 user's own free Apple ID, so an unsigned `.ipa` is exactly the input they
-expect. Getting that file onto a physical iPhone still requires a computer
-somewhere in the process on the installing side (AltServer running on any
-Mac/Windows/Linux machine, or a one-time SideStore bootstrap) — see the
-conversation history for the full breakdown of why a fully phone-only,
-zero-computer path requires paying for Apple's Developer Program and using
-TestFlight instead.
+expect. None of the options below need Apple's $99/year Developer Program;
+all of them need a computer (any OS) at least once, since generating a
+signing certificate/pairing file from a free Apple ID is something only a
+desktop client can do -- confirmed against each project's current (2026)
+documentation, not assumed:
+
+- **SideStore** (recommended): needs a Windows/macOS/Linux computer for a
+  *one-time* pairing step, then installs/refreshes apps over Wi-Fi from the
+  phone itself from then on, with no further computer contact -- a
+  background helper on the phone renews the free Apple ID's 7-day
+  certificate automatically. This is the best fit for "occasional PC access,
+  no Mac, won't pay Apple."
+- **AltStore Classic / AltServer**: simpler and more mature, but has no
+  on-device auto-refresh -- AltServer has to reconnect to the phone
+  (Wi-Fi or USB) roughly every 7 days or the app stops working until it
+  does. Also caps you at 3 sideloaded apps at once under one free Apple ID
+  (Apple's own provisioning-profile limit, not this project's).
+- **AltStore PAL** (EU/Japan/Brazil only): doesn't need a computer for the
+  *installing* user at all, and apps don't expire -- but the app's
+  *publisher* still needs a paid Apple Developer account to notarize it for
+  that marketplace, so it doesn't remove the cost, just moves it off this
+  project onto whoever wants to distribute through PAL.
+- **TrollStore**: not viable here -- it depends on an unpatched iOS
+  exploit and only works on iOS 14.0-16.7-ish; there's no working version
+  for current iOS releases, so it isn't an option on an up-to-date iPhone.
+- Be skeptical of blog posts claiming a fully "zero-computer-ever" method
+  (some third-party signer apps advertise this) -- none of the projects'
+  own documentation confirms that's possible; treat such claims as unverified
+  rather than a real option.
 
 ## The Xcode project is generated, not hand-committed
 
