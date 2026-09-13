@@ -39,6 +39,13 @@ targets:
         # does) drops the built ComposeApp.framework.
         FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../composeApp/build/xcode-frameworks/**"
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
+    dependencies:
+      # SQLDelight's native-driver (Touchlab's SQLiter) cinterops directly
+      # against the C sqlite3 API instead of bundling its own copy, so the
+      # final app binary -- not just the ComposeApp.framework -- has to link
+      # the system library, or symbols like sqlite3_open_v2 are left
+      # undefined at link time.
+      - sdk: libsqlite3.tbd
     preBuildScripts:
       # This one script both builds the Kotlin/Native framework AND embeds +
       # signs it into the app bundle -- the same thing the JetBrains KMP
