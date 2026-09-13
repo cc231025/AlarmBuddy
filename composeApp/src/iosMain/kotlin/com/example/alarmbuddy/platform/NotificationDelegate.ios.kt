@@ -12,12 +12,14 @@ import platform.darwin.NSObject
 // Handles taps on the alarm notification burst (see AlarmScheduler.ios.kt).
 // Must stay alive for the process lifetime -- UNUserNotificationCenter holds
 // its delegate weakly, so anything else would get garbage collected. This is
-// a `class` with a companion-held singleton rather than a Kotlin `object`
-// because Kotlin/Native's backend crashes ("Allocation of Obj-C class ...
-// should have been lowered") when an `object` directly subclasses an
-// Objective-C class like NSObject.
+// a `class` with the singleton instance held in a top-level val (below)
+// rather than a Kotlin `object`, because Kotlin/Native's backend rejects
+// Objective-C subclasses declared as `object` ("Allocation of Obj-C class
+// ... should have been lowered") and also rejects stored fields on the
+// companion of an Objective-C subclass ("Fields are not supported for
+// Companion of subclass of ObjC type").
 @OptIn(ExperimentalForeignApi::class)
-class NotificationDelegate private constructor() : NSObject(), UNUserNotificationCenterDelegateProtocol {
+class NotificationDelegate : NSObject(), UNUserNotificationCenterDelegateProtocol {
 
     // Keep showing the banner+sound even while the app is already in the
     // foreground (otherwise a burst notification firing while the user is
@@ -43,10 +45,10 @@ class NotificationDelegate private constructor() : NSObject(), UNUserNotificatio
     }
 
     companion object {
-        private val instance = NotificationDelegate()
-
         fun install() {
-            UNUserNotificationCenter.currentNotificationCenter().delegate = instance
+            UNUserNotificationCenter.currentNotificationCenter().delegate = notificationDelegateInstance
         }
     }
 }
+
+private val notificationDelegateInstance = NotificationDelegate()
