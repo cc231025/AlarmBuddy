@@ -271,42 +271,54 @@ settings that already exist on every iPhone. Both of the following are now
    pressure, a reboot), the independently OS-scheduled notifications are
    still the fallback.
 
-3. **What "force-quit" means, and what genuinely cannot be fixed for free.**
-   Force-quitting an app means opening the App Switcher (swipe up and hold,
-   or double-click Home on older iPhones) and swiping that app's card away.
-   That's different from simply pressing Home to background the app --
-   backgrounding alone only *suspends* the process (which is exactly what
-   the background-audio keep-alive above is designed to prevent), while a
-   force-quit unconditionally *terminates* it. SpringBoard (the OS's own
-   home-screen process), not AlarmBuddy, does the killing, entirely outside
-   any third-party app's process or control -- there is no API, entitlement,
-   or private hack that lets an app intercept, delay, or veto that gesture,
-   at any price. (A tiny handful of Apple's own system categories -- an
-   active Phone/CallKit call, a live turn-by-turn navigation session with
-   background location -- get OS-level exemptions from this; no
-   general-purpose third-party app can opt into that behavior.) So "deny the
-   quit" isn't available as a feature to build; "keep the alarm going so
-   reopening the app is required to shut it off" is exactly what's already
-   built, via a different mechanism: the notification burst keeps firing
-   independently (it was scheduled with the OS up front, not by the now-dead
-   process), and `RingingScreen.kt`/`MainViewController.kt`/`main.kt`'s
-   `navigateTo`/`ringingAlarmId` persistence means reopening the app --
-   whether from a notification tap or the Home Screen icon -- always lands
-   back on the Ringing/task-gate screen, never a normal Home screen where the
-   alarm could just be ignored. The only thing a force-quit still
-   *immediately* stops is the sound itself, which is unavoidable on iOS.
-   Guided Access (above) is the one lever that closes even that gap, by
-   making the force-quit gesture unreachable in the first place -- which is
-   why it's presented as a recommended habit, not just a reminder banner.
+3. **What "force-quit" means, and what actually holds up now that arming is
+   gated on Guided Access.** Force-quitting an app means opening the App
+   Switcher (swipe up and hold, or double-click Home on older iPhones) and
+   swiping that app's card away. That's different from simply pressing Home
+   to background the app -- backgrounding alone only *suspends* the process
+   (which is exactly what the background-audio keep-alive above is designed
+   to prevent), while a force-quit unconditionally *terminates* it.
+   Crucially, **the App Switcher gesture itself is one of the things Guided
+   Access blocks** -- while it's active there is no way to even reach the
+   screen you'd force-quit from, let alone do it. Combined with the arm-time
+   gate (section 1 above), the ordinary flow is now: arm the alarm (which
+   requires Guided Access already on), don't touch Guided Access again, lock
+   the phone with the side button (which still works -- that only sleeps the
+   screen, it isn't a way out of Guided Access) and go to sleep. In that
+   flow, closing the app -- by any means, backgrounding or force-quit -- does
+   not silence the alarm, because backgrounding is handled by the keep-alive
+   loop and force-quit isn't a reachable action at all. Reaching the actual
+   stop-the-alarm screen requires unlocking the phone, which requires
+   finishing whichever tasks are configured, exactly as intended.
+   What this doesn't cover, and can't: the arm-time check is a one-time gate,
+   not continuous enforcement, so nothing stops someone from deliberately
+   re-entering Settings (or triple-clicking and typing their own Guided
+   Access passcode) to turn Guided Access back off before actually going to
+   sleep -- at which point the App Switcher becomes reachable again and a
+   force-quit that night would cut the sound immediately. That's not "closing
+   the app," though; it's consciously dismantling a lock with the same key
+   you set it with, which no app -- free or paid, on any platform -- can
+   prevent someone from doing to their own device. The other true edge case
+   is a full device reboot or shutdown, which clears Guided Access (and the
+   running app) along with it; that's outside any app's control and is rare
+   in practice. Short of those two deliberate/edge cases, the notification
+   burst and the `navigateTo`/`ringingAlarmId` ringing-state persistence in
+   `RingingScreen.kt`/`MainViewController.kt`/`main.kt` remain as a second
+   layer of defense regardless -- so even in the "Guided Access got turned
+   off" scenario, reopening the app always lands back on the Ringing/
+   task-gate screen, never a normal Home screen where the alarm could just
+   be ignored.
 
-Put together: Guided Access removes the "leave the app" and "turn down the
-volume" escape hatches; the background-audio keep-alive removes the "just
-background it and it goes quiet" escape hatch; the ringing-state persistence
-removes the "reopen and land on a normal Home screen" escape hatch. What's
-left standing is a *deliberate*, informed force-quit by someone who is not in
-a Guided Access session -- and that's true of literally every alarm app on
-the App Store that isn't using Apple's Critical Alerts, including the
-well-known paid ones.
+Put together: with arming gated on Guided Access, the ordinary "set it and go
+to sleep" flow now holds up the way the original Android app's core promise
+worked -- the alarm cannot be silenced by closing the app, full stop, because
+closing the app either does nothing (backgrounding, handled by the keep-alive
+loop) or isn't reachable (force-quit, blocked by Guided Access). What remains
+possible is only a deliberate, informed act of turning off your own lock
+before the alarm fires, or a device reboot -- and that's a materially
+stronger guarantee than "every alarm app on the App Store that isn't using
+Apple's Critical Alerts" typically offers, precisely because most of them
+don't gate arming on Guided Access the way this branch now does.
 
 ## A note on how this was built, and what's still unverified
 
