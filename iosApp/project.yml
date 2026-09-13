@@ -24,6 +24,16 @@ targets:
         SWIFT_VERSION: 5.0
         TARGETED_DEVICE_FAMILY: "1"
         ENABLE_BITCODE: NO
+        # CI builds against the generic "platform=iOS Simulator" destination
+        # (no specific device), so Xcode can't tell which arch is "active" and
+        # falls back to its full standard list -- arm64 *and* x86_64 -- even
+        # though every Mac running this build is Apple Silicon. composeApp's
+        # Kotlin targets only include iosSimulatorArm64 (iosX64 was dropped:
+        # Compose Multiplatform 1.12.0 doesn't publish that variant anymore),
+        # so Gradle's Compose-resources sync task has nothing to map x86_64 to
+        # and fails with "Unknown iOS simulator arch: 'x86_64'". Excluding it
+        # here is the standard fix for this exact KMP situation.
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": "x86_64"
         # Where `./gradlew :composeApp:embedAndSignAppleFrameworkForXcode` (run
         # by the CI script, mirroring what Xcode's own KMP-plugin build phase
         # does) drops the built ComposeApp.framework.
