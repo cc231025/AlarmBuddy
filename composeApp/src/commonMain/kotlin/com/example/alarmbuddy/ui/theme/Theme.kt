@@ -1,8 +1,11 @@
 package com.example.alarmbuddy.ui.theme
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 
 // The original Android AlarmBuddyTheme computed a dynamic-color/dark-theme
 // scheme but never actually used it -- it always rendered with a hardcoded
@@ -21,6 +24,15 @@ fun AlarmBuddyTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = colorScheme,
         typography = AppTypography,
-        content = content,
-    )
+    ) {
+        // MaterialTheme only provides theming tokens -- it doesn't paint
+        // anything itself. Without this Surface, any screen that doesn't
+        // fillMaxSize() its own root (e.g. HomeScreen's Column, which only
+        // fillMaxWidth()s) leaves the rest of the window showing whatever
+        // the native view's default background is, which on iOS is black,
+        // not this app's intended background color.
+        Surface(modifier = Modifier.fillMaxSize(), color = colorScheme.background) {
+            content()
+        }
+    }
 }
