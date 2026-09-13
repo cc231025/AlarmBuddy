@@ -20,8 +20,17 @@ kotlin {
         }
     }
 
+    // Intel iOS Simulator (iosX64) deliberately left out: Compose Multiplatform
+    // 1.12.0 no longer publishes an ios_x64 variant for compose.runtime/compose.ui
+    // (Intel Macs are long discontinued, and GitHub's macos-15 runners -- like any
+    // Mac sold since 2020 -- are Apple Silicon, so the simulator they build for is
+    // ios_simulator_arm64, never ios_x64). Declaring iosX64() here made Gradle try
+    // to resolve dependency variants for a target these libraries don't ship
+    // anymore, which failed the *entire* build's dependency resolution -- not just
+    // that target -- with a wall of "No matching variant" errors. iosArm64 (real
+    // devices) + iosSimulatorArm64 (Apple Silicon simulator, including CI) are the
+    // only targets actually needed.
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
