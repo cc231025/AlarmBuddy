@@ -121,6 +121,50 @@ right before every build is a lot more robust. Locally on a Mac: `brew
 install xcodegen && cd iosApp && xcodegen generate` produces `iosApp.xcodeproj`
 before opening it in Xcode.
 
+## Testing the "can't be silenced" behavior
+
+This is the actual point of the app, so it deserves an explicit test matrix
+rather than just "try it and see." Test these on a real device (not just the
+Simulator -- background audio suspension in particular behaves differently
+on real hardware):
+
+Expected to hold up (these are what iOS actually lets an app guarantee):
+- Set a short test alarm, lock the phone, wait for it to fire: a burst of
+  notifications should appear on the lock screen, one every ~3s, each with
+  sound.
+- Swipe away/dismiss one notification from the lock screen: the *rest* of
+  the burst should keep firing -- dismissing one doesn't cancel the others,
+  since they were all scheduled independently up front.
+- Tapping any one of them should open the app straight into Ringing (not
+  Home), and the full alarm sound should start looping.
+- While Ringing's sound is playing in the foreground, flipping the physical
+  Silent switch should NOT mute it (AVAudioSession category `.playback`
+  ignores the switch). This is the iOS equivalent of the original app's
+  WRITE_SETTINGS-based volume lock.
+- Force-quitting the app mid-ring (swipe up in the app switcher) *will* cut
+  the sound immediately -- then reopening the app (from the home screen icon,
+  not a notification) should drop you straight back into the same
+  Ringing/task-gate screen, not a normal Home screen where you could just
+  ignore it. (This is what the `navigateTo`/`ringingAlarmId` persistence in
+  AppSettings is for.)
+
+Expected NOT to hold up -- these are real, permanent gaps versus the Android
+version, not bugs to chase:
+- The hardware volume-down buttons *can* lower the Ringing screen's sound,
+  including to zero. Android's AudioManager let the app force the stream
+  back to max; iOS gives no app that power over the physical volume level.
+- Turning on Do Not Disturb/a Focus mode, or leaving Silent Mode on, *before*
+  the notification burst fires will silence it. Getting the notification
+  sound itself to ignore Silent Mode/Focus requires Apple's Critical Alerts
+  entitlement (a manual request tied to a paid Developer account) -- not
+  implemented here.
+- Force-quitting the app always stops the sound outright, full stop. No
+  third-party app on iOS can prevent a force-quit or survive it with audio
+  still playing.
+- Revoking notification permission (Settings -> AlarmBuddy -> Notifications)
+  means no burst fires at all when the alarm's due. There's no fallback path
+  for this in the current design.
+
 ## A note on how this was built, and what's still unverified
 
 This port was written in a Linux sandbox with no macOS/Xcode available, and

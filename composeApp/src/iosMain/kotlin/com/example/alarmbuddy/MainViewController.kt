@@ -1,6 +1,7 @@
 package com.example.alarmbuddy
 
 import androidx.compose.ui.window.ComposeUIViewController
+import com.example.alarmbuddy.platform.AlarmNotificationRouter
 import com.example.alarmbuddy.platform.DatabaseDriverFactory
 import com.example.alarmbuddy.platform.NotificationDelegate
 import com.example.alarmbuddy.platform.requestNotificationAuthorization
@@ -19,6 +20,19 @@ fun MainViewController(): UIViewController {
     }
 
     val appContainer = AppContainer(DatabaseDriverFactory())
+
+    // Cold launch (e.g. the user force-quit the app while an alarm was
+    // actively ringing, then reopened it from the home screen icon rather
+    // than a notification): if we were mid-ring, go straight back to the
+    // Ringing/task-gate screen instead of a normal Home screen. This is the
+    // one part of "you can't just make it go away" that iOS *does* let us
+    // guarantee, even though it can't stop a force-quit from cutting the
+    // sound itself. Mirrors the original app's SharedPreferences check in
+    // MainActivity.onCreate.
+    val pendingId = appContainer.appSettings.getInt("ringingAlarmId")
+    if (appContainer.appSettings.getString("navigateTo") == "Ringing" && pendingId != null) {
+        AlarmNotificationRouter.pendingAlarmId.value = pendingId.toLong()
+    }
 
     return ComposeUIViewController {
         App(appContainer)

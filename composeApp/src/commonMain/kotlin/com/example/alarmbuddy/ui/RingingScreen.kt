@@ -59,6 +59,13 @@ fun Ringing(
     LaunchedEffect(alarm.id) {
         viewModel.updateAlarm(alarm.copy(activated = false))
         appContainer.alarmSoundPlayer.play(soundFileNameFor(alarm.audioFile), alarm.volume)
+        // Persisted (not just in-memory) so that a force-quit-and-reopen during
+        // an active alarm lands back on this Ringing/task-gate screen instead
+        // of a normal Home screen -- see AppEntryPoint's startup check. This is
+        // the one escape path that's actually preventable on iOS; the app being
+        // silenced by a force-quit itself is not (see MIGRATION_PLAN.md).
+        appContainer.appSettings.putString("navigateTo", "Ringing")
+        appContainer.appSettings.putInt("ringingAlarmId", alarm.id.toInt())
     }
 
     var currentTask by remember { mutableIntStateOf(0) }
@@ -134,7 +141,7 @@ fun Ringing(
                 FinishScreen(onStopAlarm = {
                     appContainer.alarmSoundPlayer.stop()
                     appContainer.appSettings.clear("navigateTo")
-                    appContainer.appSettings.clear("alarmId")
+                    appContainer.appSettings.clear("ringingAlarmId")
                     onFinished()
                 })
             }
