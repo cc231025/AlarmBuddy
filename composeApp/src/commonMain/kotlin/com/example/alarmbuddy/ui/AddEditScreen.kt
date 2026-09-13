@@ -40,12 +40,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.alarmbuddy.data.Alarm
@@ -267,7 +267,6 @@ private fun AddBarcodePopup(
         ) {
             Popup(
                 alignment = Alignment.Center,
-                properties = PopupProperties(excludeFromSystemGesture = true),
                 onDismissRequest = onClickOutside,
             ) {
                 Column(

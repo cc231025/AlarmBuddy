@@ -105,7 +105,11 @@ object BackgroundKeepAlive {
 
         val session = AVAudioSession.sharedInstance()
         session.setCategory(AVAudioSessionCategoryPlayback, error = null)
-        session.setActive(true, error = null)
+        try {
+            session.setActive(true)
+        } catch (_: Throwable) {
+            // Best-effort activation, matches the original silent-on-failure behavior.
+        }
 
         val soundName = soundFileNameFor(alarm.audioFile)
         val extension = soundFileExtension(soundName)

@@ -1,6 +1,7 @@
 package com.example.alarmbuddy.platform
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import platform.CoreMotion.CMMotionManager
 import platform.Foundation.NSOperationQueue
 

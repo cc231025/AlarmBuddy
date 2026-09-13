@@ -1,14 +1,13 @@
 package com.example.alarmbuddy.platform
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.Foundation.NSObject
 import platform.UserNotifications.UNNotification
-import platform.UserNotifications.UNNotificationCenter
 import platform.UserNotifications.UNNotificationPresentationOptionBanner
 import platform.UserNotifications.UNNotificationPresentationOptionSound
 import platform.UserNotifications.UNNotificationResponse
 import platform.UserNotifications.UNUserNotificationCenter
 import platform.UserNotifications.UNUserNotificationCenterDelegateProtocol
+import platform.darwin.NSObject
 
 // Handles taps on the alarm notification burst (see AlarmScheduler.ios.kt).
 // Must be a singleton `object`, not a local instance -- UNUserNotificationCenter

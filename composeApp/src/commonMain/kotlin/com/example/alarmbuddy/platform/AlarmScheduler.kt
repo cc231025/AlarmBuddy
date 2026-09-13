@@ -13,7 +13,7 @@ import com.example.alarmbuddy.data.Alarm
 // into the Ringing screen. See MIGRATION_PLAN.md for the full rationale,
 // including the Critical Alerts entitlement needed to make the sound ignore
 // Silent Mode / Focus while the notification fires in the background.
-expect class AlarmScheduler {
+expect class AlarmScheduler() {
     fun schedule(alarm: Alarm)
     fun cancel(alarm: Alarm)
 

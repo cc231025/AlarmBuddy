@@ -23,8 +23,8 @@ import platform.AVFoundation.AVMetadataObjectTypeEAN13Code
 import platform.AVFoundation.AVMetadataObjectTypeEAN8Code
 import platform.AVFoundation.AVMetadataObjectTypeQRCode
 import platform.AVFoundation.AVMetadataObjectTypeUPCECode
-import platform.Foundation.NSObject
 import platform.UIKit.UIView
+import platform.darwin.NSObject
 import platform.darwin.dispatch_get_main_queue
 
 // Replaces CameraX + ML Kit's BarcodeScanning client. AVCaptureMetadataOutput

@@ -19,7 +19,11 @@ actual class AlarmSoundPlayer actual constructor() {
     actual fun play(soundFileName: String, volume: Float) {
         val session = AVAudioSession.sharedInstance()
         session.setCategory(AVAudioSessionCategoryPlayback, error = null)
-        session.setActive(true, error = null)
+        try {
+            session.setActive(true)
+        } catch (_: Throwable) {
+            // Best-effort activation, matches the original silent-on-failure behavior.
+        }
 
         val extension = soundFileExtension(soundFileName)
         val url = NSBundle.mainBundle.URLForResource(soundFileName, withExtension = extension)
@@ -44,6 +48,10 @@ actual class AlarmSoundPlayer actual constructor() {
     actual fun stop() {
         player?.stop()
         player = null
-        AVAudioSession.sharedInstance().setActive(false, error = null)
+        try {
+            AVAudioSession.sharedInstance().setActive(false)
+        } catch (_: Throwable) {
+            // Best-effort deactivation, matches the original silent-on-failure behavior.
+        }
     }
 }

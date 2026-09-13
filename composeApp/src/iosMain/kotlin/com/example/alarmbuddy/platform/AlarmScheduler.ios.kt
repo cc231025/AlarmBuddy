@@ -34,7 +34,7 @@ import platform.UserNotifications.UNUserNotificationCenter
  * Critical Alerts entitlement.
  */
 @OptIn(ExperimentalForeignApi::class)
-actual class AlarmScheduler {
+actual class AlarmScheduler actual constructor() {
 
     actual fun schedule(alarm: Alarm) {
         cancel(alarm) // clear any previous burst for this alarm id first
@@ -45,11 +45,11 @@ actual class AlarmScheduler {
 
         for (index in 0 until BURST_COUNT) {
             val content = UNMutableNotificationContent().apply {
-                setValue("Alarm Triggered", forKey = "title")
-                setValue("Your alarm is ringing! Open AlarmBuddy to stop it.", forKey = "body")
-                setValue(UNNotificationSound.soundNamed("${soundName}_notif.wav"), forKey = "sound")
-                setValue(mapOf("alarmId" to alarm.id.toString()), forKey = "userInfo")
-                setValue(ALARM_CATEGORY, forKey = "categoryIdentifier")
+                title = "Alarm Triggered"
+                body = "Your alarm is ringing! Open AlarmBuddy to stop it."
+                sound = UNNotificationSound.soundNamed("${soundName}_notif.wav")
+                userInfo = mapOf("alarmId" to alarm.id.toString())
+                categoryIdentifier = ALARM_CATEGORY
             }
 
             val fireDelay = (secondsUntilFirstFire + index * BURST_INTERVAL_SECONDS)
@@ -94,9 +94,9 @@ actual class AlarmScheduler {
                 NSCalendarUnitHour or NSCalendarUnitMinute or NSCalendarUnitSecond,
             fromDate = now,
         )
-        components.setValue(hour.toLong(), forKey = "hour")
-        components.setValue(minute.toLong(), forKey = "minute")
-        components.setValue(0L, forKey = "second")
+        components.setValue(hour.toLong(), forComponent = NSCalendarUnitHour)
+        components.setValue(minute.toLong(), forComponent = NSCalendarUnitMinute)
+        components.setValue(0L, forComponent = NSCalendarUnitSecond)
 
         var target = calendar.dateFromComponents(components) ?: now
         if (target.timeIntervalSinceNow < 0) {

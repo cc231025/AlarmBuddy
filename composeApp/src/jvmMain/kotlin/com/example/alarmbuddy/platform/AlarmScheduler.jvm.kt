@@ -6,7 +6,7 @@ import com.example.alarmbuddy.data.Alarm
 // to schedule against outside iosMain, so this just logs. Its only purpose is
 // letting the shared UI/viewmodel code compile and run on a normal JVM for
 // local smoke-testing without Xcode.
-actual class AlarmScheduler {
+actual class AlarmScheduler actual constructor() {
     actual fun schedule(alarm: Alarm) {
         println("[desktop stub] would schedule alarm ${alarm.id} at ${alarm.hour}:${alarm.minute}")
     }
