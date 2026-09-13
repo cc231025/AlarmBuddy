@@ -20,7 +20,7 @@ actual class AlarmSoundPlayer actual constructor() {
         val session = AVAudioSession.sharedInstance()
         session.setCategory(AVAudioSessionCategoryPlayback, error = null)
         try {
-            session.setActive(true)
+            session.setActive(true, withOptions = 0u)
         } catch (_: Throwable) {
             // Best-effort activation, matches the original silent-on-failure behavior.
         }
@@ -49,7 +49,7 @@ actual class AlarmSoundPlayer actual constructor() {
         player?.stop()
         player = null
         try {
-            AVAudioSession.sharedInstance().setActive(false)
+            AVAudioSession.sharedInstance().setActive(false, withOptions = 0u)
         } catch (_: Throwable) {
             // Best-effort deactivation, matches the original silent-on-failure behavior.
         }

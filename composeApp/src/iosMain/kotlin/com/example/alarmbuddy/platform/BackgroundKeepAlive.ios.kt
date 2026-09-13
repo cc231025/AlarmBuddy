@@ -106,7 +106,7 @@ object BackgroundKeepAlive {
         val session = AVAudioSession.sharedInstance()
         session.setCategory(AVAudioSessionCategoryPlayback, error = null)
         try {
-            session.setActive(true)
+            session.setActive(true, withOptions = 0u)
         } catch (_: Throwable) {
             // Best-effort activation, matches the original silent-on-failure behavior.
         }

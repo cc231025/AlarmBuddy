@@ -44,12 +44,16 @@ actual class AlarmScheduler actual constructor() {
         val soundName = soundFileNameFor(alarm.audioFile)
 
         for (index in 0 until BURST_COUNT) {
+            // title/body/sound/userInfo/categoryIdentifier are bound read-only
+            // (`val`) by Kotlin/Native's interop despite being declared
+            // read-write on UNMutableNotificationContent, so they're set
+            // through the underlying Objective-C setter methods instead.
             val content = UNMutableNotificationContent().apply {
-                title = "Alarm Triggered"
-                body = "Your alarm is ringing! Open AlarmBuddy to stop it."
-                sound = UNNotificationSound.soundNamed("${soundName}_notif.wav")
-                userInfo = mapOf("alarmId" to alarm.id.toString())
-                categoryIdentifier = ALARM_CATEGORY
+                setTitle("Alarm Triggered")
+                setBody("Your alarm is ringing! Open AlarmBuddy to stop it.")
+                setSound(UNNotificationSound.soundNamed("${soundName}_notif.wav"))
+                setUserInfo(mapOf("alarmId" to alarm.id.toString()))
+                setCategoryIdentifier(ALARM_CATEGORY)
             }
 
             val fireDelay = (secondsUntilFirstFire + index * BURST_INTERVAL_SECONDS)
