@@ -25,9 +25,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,10 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.alarmbuddy.AppContainer
 import com.example.alarmbuddy.data.Alarm
 import com.example.alarmbuddy.platform.AlarmScheduler
-import com.example.alarmbuddy.platform.isGuidedAccessEnabled
 import com.example.alarmbuddy.ui.theme.SecondaryColor
 import org.jetbrains.compose.resources.painterResource
 import alarmbuddy.composeapp.generated.resources.Res
@@ -54,7 +49,6 @@ import alarmbuddy.composeapp.generated.resources.shake
 fun Home(
     viewModel: AlarmViewModel,
     alarmScheduler: AlarmScheduler,
-    appContainer: AppContainer,
     onAddAlarm: () -> Unit,
     onEditAlarm: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -62,8 +56,6 @@ fun Home(
     val state by viewModel.alarmUIState.collectAsStateWithLifecycle()
 
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        GuidedAccessReminder(alarms = state, appContainer = appContainer)
-
         Button(onClick = onAddAlarm) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Alarm")
         }
@@ -125,37 +117,18 @@ fun AlarmItem(
             }
 
             Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.End) {
-                var showGuidedAccessGate by remember { mutableStateOf(false) }
-
                 Switch(
                     checked = alarm.activated,
                     onCheckedChange = {
                         if (!alarm.activated) {
-                            // Gate arming on Guided Access already being on,
-                            // not just nagging about it: this is the moment
-                            // that matters most, since it's what makes sure
-                            // an alarm can't end up "armed" for a night where
-                            // the strongest lock was never turned on. See
-                            // MIGRATION_PLAN.md.
-                            if (isGuidedAccessEnabled()) {
-                                alarmScheduler.schedule(alarm)
-                                viewModel.updateAlarm(alarm.copy(activated = true))
-                            } else {
-                                showGuidedAccessGate = true
-                            }
+                            alarmScheduler.schedule(alarm)
+                            viewModel.updateAlarm(alarm.copy(activated = true))
                         } else {
                             alarmScheduler.cancel(alarm)
                             viewModel.updateAlarm(alarm.copy(activated = false))
                         }
                     },
                 )
-
-                if (showGuidedAccessGate) {
-                    GuidedAccessOnboardingDialog(
-                        onDismiss = { showGuidedAccessGate = false },
-                        blocking = true,
-                    )
-                }
 
                 Text(text = alarm.audioFile)
                 Spacer(Modifier.width(6.dp))

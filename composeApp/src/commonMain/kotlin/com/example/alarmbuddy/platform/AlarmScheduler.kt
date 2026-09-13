@@ -5,23 +5,20 @@ import com.example.alarmbuddy.data.Alarm
 // Replaces Android's AlarmManager.setExactAndAllowWhileIdle() + AlarmReceiver
 // (BroadcastReceiver) + AlarmService (foreground service).
 //
-// iOS has no equivalent of "wake the app and start playing audio with zero
-// user interaction, even if the app was killed." The iOS actual instead
-// schedules a burst of local notifications clustered around the alarm time
-// (a loud custom sound on each), which is the same technique real iOS alarm
-// apps (Alarmy, etc.) use. Tapping any one of them opens the app straight
-// into the Ringing screen. See MIGRATION_PLAN.md for the full rationale,
-// including the Critical Alerts entitlement needed to make the sound ignore
-// Silent Mode / Focus while the notification fires in the background.
+// The iOS actual schedules a real AlarmKit alarm (iOS 26+, see
+// AlarmScheduler.ios.kt / AlarmKitBridge.swift) -- the same OS-level
+// mechanism the built-in Clock app's alarms use, which rings through Silent
+// Mode/Focus and survives the app being fully force-quit, with no paid
+// developer account or Critical Alerts approval needed.
 expect class AlarmScheduler() {
     fun schedule(alarm: Alarm)
     fun cancel(alarm: Alarm)
 
     // Called whenever the full alarm list changes (added/edited/toggled/
-    // deleted, and once on cold launch with whatever's in the database) so
-    // the iOS actual can keep its background "keep the process alive with a
-    // near-silent audio loop" trick (see BackgroundKeepAlive.ios.kt) pointed
-    // at whichever activated alarm is coming up next. A no-op on the desktop
-    // dev target, which has no such background-audio mechanism to maintain.
+    // deleted, and once on cold launch with whatever's in the database).
+    // Currently a no-op on every platform -- each alarm is already
+    // individually scheduled/canceled via schedule()/cancel() above, and
+    // AlarmKit alarms persist on their own -- kept as a hook in case a
+    // platform ever needs to react to the full armed-alarm list changing.
     fun syncArmedAlarms(alarms: List<Alarm>)
 }

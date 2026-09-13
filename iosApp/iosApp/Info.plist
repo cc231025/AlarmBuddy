@@ -32,14 +32,16 @@
     <key>NSCameraUsageDescription</key>
     <string>AlarmBuddy uses the camera to scan a barcode you set as a way to stop your alarm.</string>
 
-    <!-- Two uses: (1) lets an alarm that's already ringing keep playing its
-         sound if the app is briefly backgrounded (e.g. the user glances at
-         another app while doing the barcode/shake task), and (2) is what
-         allows BackgroundKeepAlive.ios.kt's near-silent looping playback to
-         keep the process alive overnight instead of getting suspended, so it
-         can start ringing on its own at the target time instead of waiting
-         for a notification tap. See MIGRATION_PLAN.md for what this can and
-         can't do compared to Android's foreground service. -->
+    <!-- Shown once when AlarmKit first requests permission to schedule
+         alarms (see AlarmKitBridge.swift). -->
+    <key>NSAlarmKitUsageDescription</key>
+    <string>AlarmBuddy uses AlarmKit to ring your alarms through Silent Mode and Focus, even if the app isn't running.</string>
+
+    <!-- Lets an alarm that's already ringing (AlarmSoundPlayer.ios.kt, in the
+         Ringing screen's task gate) keep playing its sound if the app is
+         briefly backgrounded, e.g. while the barcode scanner briefly loses
+         focus. Actually waking/ringing the alarm itself no longer depends on
+         this -- that's AlarmKit's job now (see AlarmKitBridge.swift). -->
     <key>UIBackgroundModes</key>
     <array>
         <string>audio</string>

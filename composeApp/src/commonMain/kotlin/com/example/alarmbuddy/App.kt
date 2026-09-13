@@ -39,12 +39,11 @@ fun App(appContainer: AppContainer) {
 
         var screen by remember { mutableStateOf<Screen>(Screen.Home) }
 
-        // Cold-launched (or resumed) from a tapped alarm notification -> jump
-        // straight to Ringing. Mirrors the original app's SharedPreferences
-        // "navigateTo"/"id" check in MainActivity.onCreate. This same signal
-        // is also how BackgroundKeepAlive (iOS-only) routes into Ringing when
-        // its own background timer -- not a notification tap -- is what
-        // actually fired the alarm.
+        // Cold-launched (or resumed) after tapping "Stop" on a ringing
+        // AlarmKit alarm -> jump straight to Ringing. Mirrors the original
+        // app's SharedPreferences "navigateTo"/"id" check in
+        // MainActivity.onCreate. See AlarmNotificationRouter.kt /
+        // AlarmKitBridge.swift.
         val pendingAlarmId by AlarmNotificationRouter.pendingAlarmId.collectAsState()
         LaunchedEffect(pendingAlarmId) {
             pendingAlarmId?.let { id ->
@@ -53,11 +52,11 @@ fun App(appContainer: AppContainer) {
             }
         }
 
-        // Keep the platform scheduler's idea of "what's the next armed alarm"
-        // in sync with the database -- on cold launch with whatever's already
-        // activated, and every time an alarm is added/edited/toggled/deleted.
-        // On iOS this is what BackgroundKeepAlive polls against; it's a no-op
-        // on the desktop dev target. See AlarmScheduler.kt / BackgroundKeepAlive.ios.kt.
+        // syncArmedAlarms() is currently a no-op on every platform (AlarmKit
+        // alarms on iOS are scheduled/canceled individually and persist on
+        // their own; see AlarmScheduler.ios.kt), but toggling still runs
+        // through it in case a platform ever needs to react to the full
+        // armed-alarm list changing.
         val alarmList by viewModel.alarmUIState.collectAsStateWithLifecycle()
         LaunchedEffect(alarmList) {
             appContainer.alarmScheduler.syncArmedAlarms(alarmList)
@@ -67,7 +66,6 @@ fun App(appContainer: AppContainer) {
             is Screen.Home -> Home(
                 viewModel = viewModel,
                 alarmScheduler = appContainer.alarmScheduler,
-                appContainer = appContainer,
                 onAddAlarm = { screen = Screen.Add },
                 onEditAlarm = { id -> screen = Screen.Edit(id) },
             )

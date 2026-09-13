@@ -8,8 +8,12 @@
 name: iosApp
 options:
   bundleIdPrefix: com.example.alarmbuddy
+  # AlarmKit (see AlarmKitBridge.swift) requires iOS 26 -- there's no older
+  # fallback path, since AlarmKit is what lets alarms ring through Silent
+  # Mode/Focus and survive a force-quit without a paid developer account
+  # (the old local-notification-burst approach couldn't do either).
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "26.0"
 
 targets:
   iosApp:
