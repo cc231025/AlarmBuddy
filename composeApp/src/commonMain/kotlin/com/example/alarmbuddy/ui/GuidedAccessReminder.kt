@@ -76,8 +76,9 @@ fun GuidedAccessReminder(
                 Text(text = "Guided Access is off", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "For the strongest lock tonight -- no volume buttons, can't leave the " +
-                        "app until the tasks are done -- triple-click the side button before bed.",
+                    text = "This alarm was armed with Guided Access on, but it's off now -- no " +
+                        "volume buttons, can't leave the app until the tasks are done, only apply " +
+                        "while it's active. Triple-click the side button before bed to turn it back on.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(8.dp))
@@ -104,13 +105,32 @@ fun GuidedAccessReminder(
     }
 }
 
+/**
+ * Shared instructional dialog, used both for the passive "how do I set this
+ * up?" link and (with [blocking] = true) as the message shown when someone
+ * tries to arm an alarm without Guided Access on -- see the arm-time gate in
+ * HomeScreen.kt's AlarmItem.
+ */
 @Composable
-private fun GuidedAccessOnboardingDialog(onDismiss: () -> Unit) {
+fun GuidedAccessOnboardingDialog(onDismiss: () -> Unit, blocking: Boolean = false) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Lock the alarm down with Guided Access") },
+        title = {
+            Text(
+                if (blocking) "Turn on Guided Access to arm this alarm"
+                else "Lock the alarm down with Guided Access",
+            )
+        },
         text = {
             Column {
+                if (blocking) {
+                    Text(
+                        "AlarmBuddy won't arm an alarm until Guided Access is on -- that's what " +
+                            "stops a force-quit from silently disabling it later. Turn it on, then " +
+                            "flip the switch again.",
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
                 Text(
                     "Free, built into every iPhone -- no App Store, no account. Set the shortcut " +
                         "up once:",
@@ -143,7 +163,7 @@ private fun GuidedAccessOnboardingDialog(onDismiss: () -> Unit) {
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Got it")
+                Text(if (blocking) "Not now" else "Got it")
             }
         },
     )

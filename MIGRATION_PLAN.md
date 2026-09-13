@@ -158,6 +158,13 @@ Expected to hold up (these are what iOS actually lets an app guarantee):
   on (triple-click the side button) while an armed alarm is showing the
   reminder: the card should disappear within a few seconds (it's polled, not
   pushed -- iOS has no change notification for this).
+- With Guided Access off, try to flip an alarm's switch to "on": it should
+  refuse (the switch stays off) and show the "turn on Guided Access first"
+  dialog instead of arming. Turn Guided Access on, flip the switch again: it
+  should arm normally this time. Turning that same alarm off and back on
+  (still with Guided Access on) should not re-show the one-time onboarding
+  dialog a second time, only the blocking one if Guided Access is off at
+  that moment.
 
 Expected NOT to hold up -- these are real, permanent gaps versus the Android
 version, not bugs to chase, unless Guided Access is active (see the
@@ -192,34 +199,55 @@ settings that already exist on every iPhone. Both of the following are now
 **implemented in this branch**, not just proposed:
 
 1. **Guided Access (Settings -> Accessibility -> Guided Access)**, surfaced
-   in-app via `ui/GuidedAccessReminder.kt` and `platform/GuidedAccess.kt` /
-   `GuidedAccess.ios.kt`. This is the single best lever available, and it's
-   completely free and built into iOS. There is no public API for a
-   third-party app to *turn on* Guided Access -- that would defeat the point
-   of it being a deliberate, physical action -- but `UIAccessibilityIsGuidedAccessEnabled()`
-   is a public, documented API for *checking* whether it's currently active,
+   in-app via `ui/GuidedAccessReminder.kt`, `platform/GuidedAccess.kt` /
+   `GuidedAccess.ios.kt`, and gated in `ui/HomeScreen.kt`'s arm switch. This
+   is the single best lever available, and it's completely free and built
+   into iOS. There is no public API for a third-party app to *turn on*
+   Guided Access -- that would defeat the point of it being a deliberate,
+   physical action -- but `UIAccessibilityIsGuidedAccessEnabled()` is a
+   public, documented API for *checking* whether it's currently active,
    which is enough to build real enforcement pressure around:
-   - The first time someone arms an alarm, a one-time dialog walks them
-     through the actual one-time setup: turning on the Accessibility
-     Shortcut for Guided Access (Settings -> Accessibility -> Accessibility
-     Shortcut -> check Guided Access) so that, from then on, turning Guided
-     Access on each night is a single triple-click of the side button, not a
-     menu dive. That's the "can this be a one-time setting" question
-     answered as honestly as iOS allows: the *setup* is one-time; the
-     nightly *activation* is a low-friction physical gesture that Apple
-     deliberately keeps manual, forever, for any app.
-   - Whenever an alarm is armed and Guided Access is currently off, the Home
+   - **Arming is gated, not just nagged about.** Flipping an alarm's switch
+     to "on" checks `isGuidedAccessEnabled()` at that exact moment; if it's
+     off, the switch doesn't move and a dialog explains that Guided Access
+     has to be on first. There is no way to end up with an armed alarm and
+     Guided Access having never been turned on for that session -- the
+     database can't hold that state. This directly answers "can we just deny
+     arming until this is set up": yes, and it's implemented that way, not
+     merely suggested.
+   - The first time someone arms an alarm (successfully, i.e. Guided Access
+     was already on), a one-time dialog walks them through the actual
+     one-time setup: turning on the Accessibility Shortcut for Guided Access
+     (Settings -> Accessibility -> Accessibility Shortcut -> check Guided
+     Access) so that, from then on, turning Guided Access on each night is a
+     single triple-click of the side button, not a menu dive. That's the
+     "can this be a one-time setting" question answered as honestly as iOS
+     allows: the *setup* is one-time; the nightly *activation* is a
+     low-friction physical gesture Apple deliberately keeps manual, forever,
+     for any app -- but the gate above means the app never lets that gesture
+     be skipped and forgotten about for an armed alarm.
+   - Whenever an alarm is (already) armed and Guided Access is currently off
+     -- e.g. it was on at arm-time but got turned off since -- the Home
      screen shows a standing reminder card (polled every few seconds, since
      iOS gives no change notification for this, only a point-in-time check).
+     Turning an alarm off and back on re-runs the gate.
    - Once active, Guided Access can disable the physical volume buttons
      entirely and blocks leaving the app (no app-switcher, no Home
      button/swipe, no Control Center) without the Guided Access passcode --
      stronger lock-in than the Android original ever had, and it's also what
      makes a force-quit unreachable in the first place (see below).
-   - The reminder can nag; it cannot enforce. If the habit lapses on a given
-     night, none of this applies that night, and it can only be turned on by
-     whoever's phone it is -- there's no way to enable it remotely or on
-     someone else's behalf.
+   - **What the gate doesn't and can't do:** it checks Guided Access is on
+     the moment you flip the switch, not continuously afterward. Turning
+     Guided Access off again after arming (with your own passcode) doesn't
+     retroactively disarm the alarm -- nor should it; that would make
+     disarming an alarm easier, not harder. It also means arming an alarm
+     hours before bed requires either starting Guided Access early (and
+     being locked into AlarmBuddy the whole time, since that's what Guided
+     Access does) or arming it right before bed instead -- there's no
+     "schedule Guided Access for later" concept on iOS. If that friction
+     turns out to be annoying in practice, the gate could be made an opt-out
+     setting rather than mandatory; it currently isn't, matching what was
+     asked for.
 
 2. **A continuous-background-audio keep-alive**, implemented in
    `platform/BackgroundKeepAlive.ios.kt` and wired up via
