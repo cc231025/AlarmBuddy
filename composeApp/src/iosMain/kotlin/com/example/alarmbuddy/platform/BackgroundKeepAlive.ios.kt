@@ -103,13 +103,11 @@ object BackgroundKeepAlive {
     private fun startQuietLoop(alarm: Alarm) {
         if (player != null) return // already running for this session
 
-        val session = AVAudioSession.sharedInstance()
-        session.setCategory(AVAudioSessionCategoryPlayback, error = null)
-        try {
-            session.setActive(true, withOptions = 0u)
-        } catch (_: Throwable) {
-            // Best-effort activation, matches the original silent-on-failure behavior.
-        }
+        // Setting the category is enough to route through the mute switch;
+        // explicit session activation isn't exposed by this SDK's
+        // AVAudioSession binding, but starting playback below activates the
+        // session implicitly anyway.
+        AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback, error = null)
 
         val soundName = soundFileNameFor(alarm.audioFile)
         val extension = soundFileExtension(soundName)
