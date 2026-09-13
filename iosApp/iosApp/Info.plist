@@ -21,6 +21,13 @@
     <key>UILaunchScreen</key>
     <dict/>
 
+    <!-- Compose Multiplatform's iOS runtime does a startup "plist sanity
+         check" and deliberately crashes (PlistSanityCheck) if this key is
+         missing or false -- it's required for ProMotion/120Hz displays to
+         animate smoothly instead of being capped at 60Hz. -->
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
+
     <!-- Barcode scanning (AVCaptureDevice access) -->
     <key>NSCameraUsageDescription</key>
     <string>AlarmBuddy uses the camera to scan a barcode you set as a way to stop your alarm.</string>
