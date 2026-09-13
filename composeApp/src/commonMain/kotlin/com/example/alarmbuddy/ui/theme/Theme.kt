@@ -1,6 +1,7 @@
 package com.example.alarmbuddy.ui.theme
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
@@ -31,7 +32,17 @@ fun AlarmBuddyTheme(content: @Composable () -> Unit) {
         // fillMaxWidth()s) leaves the rest of the window showing whatever
         // the native view's default background is, which on iOS is black,
         // not this app's intended background color.
-        Surface(modifier = Modifier.fillMaxSize(), color = colorScheme.background) {
+        //
+        // safeDrawingPadding() insets content away from the notch/Dynamic
+        // Island, status bar, and home indicator. iosAppApp.swift's
+        // ComposeView().ignoresSafeArea(.all) deliberately hands that whole
+        // job to Compose instead of SwiftUI/UIKit -- without this, content
+        // starts at the physical top edge, e.g. HomeScreen's "+" button
+        // rendering half under the camera and becoming untappable.
+        Surface(
+            modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+            color = colorScheme.background,
+        ) {
             content()
         }
     }
